@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pokédex — Buscador de Pokemon</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header>
+  <div class="logo" id="logo" title="Volver al inicio">
+    <div class="pokeball-icon"></div>
+    <h1>Pokédex</h1>
+    <div class="pokeball-icon"></div>
+  </div>
+  <div class="controls">
+    <div class="search-wrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input type="text" id="search" placeholder="Buscar Pokémon por nombre..." autocomplete="off" />
+    </div>
+    <select id="type-filter">
+      <option value="">Todos los tipos</option>
+    </select>
+    <select id="gen-filter">
+      <option value="">Todas las generaciones</option>
+      <option value="1">Gen I (1–151)</option>
+      <option value="2">Gen II (152–251)</option>
+      <option value="3">Gen III (252–386)</option>
+      <option value="4">Gen IV (387–493)</option>
+      <option value="5">Gen V (494–649)</option>
+      <option value="6">Gen VI (650–721)</option>
+      <option value="7">Gen VII (722–809)</option>
+      <option value="8">Gen VIII (810–905)</option>
+      <option value="9">Gen IX (906–1025)</option>
+    </select>
+  </div>
+</header>
+
+<div id="status-bar">Cargando lista de Pokémon...</div>
+
+<main>
+  <div id="grid"></div>
+  <div id="empty">
+    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
+    </svg>
+    <p>No se encontraron Pokémon</p>
+  </div>
+  <div id="sentinel">
+    <div class="loader" id="loader" style="display:none"></div>
+  </div>
+</main>
+
+<!-- MODAL -->
+<div id="modal-overlay" class="modal-overlay" role="dialog" aria-modal="true">
+  <div id="modal-box" class="modal-box">
+    <button class="modal-close" id="modal-close" aria-label="Cerrar">✕</button>
+
+    <div class="modal-hero" id="modal-hero">
+      <div class="modal-hero-bg" id="modal-hero-bg"></div>
+      <img class="modal-img" id="modal-img" src="" alt="" />
+      <div class="modal-num"  id="modal-num"></div>
+      <h2 class="modal-name"  id="modal-name"></h2>
+      <div class="modal-types" id="modal-types"></div>
+    </div>
+
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="section-title">Estadísticas Base</div>
+        <div id="modal-stats"></div>
+        <div class="stat-total-row">
+          <span class="stat-total-label">Total</span>
+          <span class="stat-total-val" id="modal-total"></span>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="section-title">Efectividad de tipos (defensiva)</div>
+        <div id="modal-effectiveness"></div>
+      </div>
+
+      <div class="modal-section">
+        <div class="section-title">Efectividad de tipos (ofensiva)</div>
+        <div id="modal-offensive"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
