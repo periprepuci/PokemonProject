@@ -51,10 +51,13 @@ const GEN_RANGES = {
   '5':[494,649],'6':[650,721],'7':[722,809], '8':[810,905], '9':[906,1025],
 };
 
-// ── CACHE KEYS ────────────────────────────────────────────────
-const CACHE_V      = 5;
-const LS_LIST_KEY  = `pdx-list-v${CACHE_V}`;
-const LS_DETAIL_KEY= `pdx-detail-v${CACHE_V}`;
+// ── DATA PATHS ────────────────────────────────────────────────
+const DATA = {
+  list:    './data/pokemon-list.json',
+  details: './data/pokemon-details.json',
+  species: './data/species.json',
+  types:   './data/types.json',
+};
 
 // ── STATE ─────────────────────────────────────────────────────
 let allPokemon    = [];
@@ -67,7 +70,6 @@ let typeMap       = new Map();
 let typeFilterVal = '';
 let genFilterVal  = '';
 let searchVal     = '';
-let savePending   = false;
 
 // ── DOM REFS ──────────────────────────────────────────────────
 const grid         = document.getElementById('grid');
@@ -81,31 +83,9 @@ const modalOverlay = document.getElementById('modal-overlay');
 const modalBox     = document.getElementById('modal-box');
 const modalClose   = document.getElementById('modal-close');
 
-// ── LOCAL STORAGE CACHE ───────────────────────────────────────
-function loadLocalCache() {
-  try {
-    const raw = localStorage.getItem(LS_DETAIL_KEY);
-    if (!raw) return;
-    const obj = JSON.parse(raw);
-    for (const [k, v] of Object.entries(obj)) detailCache.set(k, v);
-  } catch {}
-}
-
-function scheduleSave() {
-  if (savePending) return;
-  savePending = true;
-  setTimeout(() => {
-    savePending = false;
-    try {
-      localStorage.setItem(LS_DETAIL_KEY, JSON.stringify(Object.fromEntries(detailCache)));
-    } catch {
-      // Quota exceeded — clear old cache entry
-      try { localStorage.removeItem(LS_DETAIL_KEY); } catch {}
-    }
-  }, 1500);
-}
-
 function trimPokemon(d) {
+  const sprites = d.sprites || {};
+  const other   = sprites.other || {};
   return {
     id:    d.id,
     name:  d.name,
@@ -113,10 +93,10 @@ function trimPokemon(d) {
     stats: d.stats,
     species: d.species ? { url: d.species.url } : null,
     sprites: {
-      front_default: d.sprites?.front_default ?? null,
+      front_default: sprites.front_default ?? null,
       other: {
-        'official-artwork': { front_default: d.sprites?.other?.['official-artwork']?.front_default ?? null },
-        home:               { front_default: d.sprites?.other?.home?.front_default ?? null },
+        'official-artwork': { front_default: other['official-artwork']?.front_default ?? null },
+        home:               { front_default: other.home?.front_default ?? null },
       },
     },
   };
@@ -137,63 +117,55 @@ async function fetchJSON(url, opts = {}) {
 
 async function getPokemonDetail(url) {
   if (detailCache.has(url)) return detailCache.get(url);
+  // Fallback a API para entradas no incluidas en los datos locales
   const data    = await fetchJSON(url);
   const trimmed = trimPokemon(data);
   detailCache.set(url, trimmed);
-  scheduleSave();
   return trimmed;
 }
 
 // ── INIT ──────────────────────────────────────────────────────
 async function init() {
-  loadLocalCache();
-
-  // Try list from localStorage first
+  statusBar.textContent = 'Cargando datos locales...';
   try {
-    const cached = localStorage.getItem(LS_LIST_KEY);
-    if (cached) allPokemon = JSON.parse(cached);
-  } catch {}
+    const [listData, detailsData, speciesData, typesData] = await Promise.all([
+      fetchJSON(DATA.list),
+      fetchJSON(DATA.details),
+      fetchJSON(DATA.species),
+      fetchJSON(DATA.types),
+    ]);
 
-  if (!allPokemon.length) {
-    try {
-      const data = await fetchJSON('https://pokeapi.co/api/v2/pokemon?limit=10000&offset=0');
-      allPokemon = data.results.map(p => {
-        const parts = p.url.split('/').filter(Boolean);
-        return { name: p.name, url: p.url, id: parseInt(parts[parts.length - 1], 10) };
-      });
-      try { localStorage.setItem(LS_LIST_KEY, JSON.stringify(allPokemon)); } catch {}
-    } catch {
-      statusBar.textContent = 'Error al conectar con la PokeAPI. Comprueba tu conexión.';
-      return;
+    allPokemon = listData;
+
+    // Pre-popular caches desde los JSON locales
+    for (const [url, detail] of Object.entries(detailsData))
+      detailCache.set(url, detail);
+    for (const [url, sp] of Object.entries(speciesData))
+      speciesCache.set(url, sp);
+
+    // Construir typeMap desde los detalles ya cargados (sin llamadas extra a la API)
+    for (const detail of detailCache.values()) {
+      for (const t of detail.types) {
+        const n = t.type.name;
+        if (!typeMap.has(n)) typeMap.set(n, new Set());
+        typeMap.get(n).add(detail.name);
+      }
     }
-  }
 
-  statusBar.textContent = `${allPokemon.length.toLocaleString()} Pokémon · Haz clic en cualquiera para ver detalles`;
-  loadTypes();   // fire-and-forget, runs in background
-  applyFilters();
-}
-
-async function loadTypes() {
-  try {
-    const data  = await fetchJSON('https://pokeapi.co/api/v2/type?limit=100', { priority: 'low' });
-    const types = data.results.map(t => t.name).sort();
-    for (const t of types) {
+    // Dropdown de tipos
+    [...typesData.map(t => t.name)].sort().forEach(name => {
       const opt = document.createElement('option');
-      opt.value = t;
-      opt.textContent = capitalize(t);
+      opt.value = name;
+      opt.textContent = capitalize(name);
       typeSelect.appendChild(opt);
-    }
-    // Load type→pokemon maps with low priority, batched
-    const BATCH = 4;
-    for (let i = 0; i < data.results.length; i += BATCH) {
-      await Promise.all(data.results.slice(i, i + BATCH).map(async (t) => {
-        try {
-          const td = await fetchJSON(t.url, { priority: 'low' });
-          typeMap.set(t.name, new Set(td.pokemon.map(p => p.pokemon.name)));
-        } catch {}
-      }));
-    }
-  } catch {}
+    });
+
+    statusBar.textContent = `${allPokemon.length.toLocaleString()} Pokémon · Haz clic en cualquiera para ver detalles`;
+    applyFilters();
+  } catch (e) {
+    statusBar.textContent = `Error cargando datos locales: ${e.message}`;
+    console.error(e);
+  }
 }
 
 // ── FILTERING ─────────────────────────────────────────────────
