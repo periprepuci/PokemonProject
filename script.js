@@ -307,6 +307,9 @@ function buildCard(d) {
 function spriteFromId(id) {
   return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
 }
+function shinySpriteFromId(id) {
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny/${id}.png`;
+}
 
 function createSkeleton(pokemon) {
   const sk = document.createElement('div');
@@ -443,7 +446,15 @@ function updateModalContent(d) {
   document.getElementById('modal-hero-bg').style.background =
     `radial-gradient(ellipse at 50% 0%, ${mainColor} 0%, transparent 70%)`;
 
-  const img = document.getElementById('modal-img');
+  const img      = document.getElementById('modal-img');
+  const shinyBtn = document.getElementById('modal-shiny-btn');
+
+  // Reset shiny toggle whenever we load a new Pokemon or form
+  shinyBtn.classList.remove('active');
+  img.classList.remove('shiny');
+  shinyBtn.dataset.normal = sprite;
+  shinyBtn.dataset.shiny  = shinySpriteFromId(d.id);
+
   if (sprite) {
     img.style.opacity = '0';
     img.onload = () => { img.style.opacity = '1'; };
@@ -558,6 +569,18 @@ function closeModal() {
 modalClose.addEventListener('click', closeModal);
 modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) closeModal(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+document.getElementById('modal-shiny-btn').addEventListener('click', () => {
+  const btn    = document.getElementById('modal-shiny-btn');
+  const img    = document.getElementById('modal-img');
+  const isShiny = btn.classList.toggle('active');
+  img.classList.toggle('shiny', isShiny);
+  const newSrc = isShiny ? btn.dataset.shiny : btn.dataset.normal;
+  img.style.opacity = '0';
+  img.onload  = () => { img.style.opacity = '1'; };
+  img.onerror = () => { img.style.opacity = '1'; btn.classList.remove('active'); img.classList.remove('shiny'); };
+  img.src = newSrc;
+});
 
 // ── LOGO RESET ────────────────────────────────────────────────
 document.getElementById('logo').addEventListener('click', () => {

@@ -413,15 +413,49 @@ main {
   opacity: .12;
 }
 
+.modal-img-wrap {
+  position: relative;
+  display: inline-flex;
+  z-index: 1;
+}
+
 .modal-img {
   width: 180px; height: 180px;
   object-fit: contain;
   filter: drop-shadow(0 8px 24px rgba(0,0,0,.7));
-  position: relative;
-  z-index: 1;
-  transition: opacity .15s ease, transform .3s;
+  transition: opacity .15s ease, transform .3s, filter .3s;
+  display: block;
+}
+.modal-img.shiny {
+  filter: drop-shadow(0 8px 24px rgba(0,0,0,.6))
+          drop-shadow(0 0 22px rgba(255,215,0,.75))
+          drop-shadow(0 0 8px rgba(255,215,0,.5));
 }
 .modal-img:hover { transform: scale(1.06); }
+
+.shiny-btn {
+  position: absolute;
+  top: -6px; right: -6px;
+  width: 30px; height: 30px;
+  background: rgba(20,24,40,.88);
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s, border-color .2s, transform .15s, box-shadow .2s;
+  z-index: 3;
+  padding: 0;
+}
+.shiny-btn:hover {
+  background: rgba(40,46,70,.95);
+  transform: scale(1.15);
+}
+.shiny-btn.active {
+  background: rgba(255,215,0,.18);
+  border-color: rgba(255,215,0,.7);
+  box-shadow: 0 0 10px rgba(255,215,0,.45);
+}
 
 .modal-num {
   font-size: 13px;
