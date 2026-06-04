@@ -46,6 +46,7 @@ const STAT_META = [
 
 const MAX_STAT = 255;
 
+
 const GEN_RANGES = {
   '1':[1,151], '2':[152,251], '3':[252,386], '4':[387,493],
   '5':[494,649],'6':[650,721],'7':[722,809], '8':[810,905], '9':[906,1025],
@@ -409,6 +410,7 @@ function buildDefHTML(eff) {
   ].map(g => effRowHTML(g.label, g.cls, g.title, eff[g.key] || [])).join('');
 }
 
+
 function buildOffHTML(eff) {
   return [
     { key:2,   label:'×2', cls:'mult-2',    title:'Super efectivo' },
@@ -569,6 +571,7 @@ function closeModal() {
 modalClose.addEventListener('click', closeModal);
 modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) closeModal(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
 
 document.getElementById('modal-shiny-btn').addEventListener('click', () => {
   const btn    = document.getElementById('modal-shiny-btn');
