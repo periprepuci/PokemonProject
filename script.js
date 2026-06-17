@@ -60,6 +60,9 @@ const GEN_RANGES = {
   '5':[494,649],'6':[650,721],'7':[722,809], '8':[810,905], '9':[906,1025],
 };
 
+// ── BACKEND ───────────────────────────────────────────────────
+const BACKEND_URL = 'https://YOUR-APP.railway.app';
+
 // ── DATA PATHS ────────────────────────────────────────────────
 const DATA = {
   list:      './data/pokemon-list.json',
@@ -88,6 +91,7 @@ let tableSortCol    = '';
 let tableSortDir    = 1;
 let lang            = 'en';
 let currentModalData = null;
+let team = [];
 
 // ── DOM REFS ──────────────────────────────────────────────────
 const grid         = document.getElementById('grid');
@@ -101,9 +105,17 @@ const statSortEl     = document.getElementById('stat-sort');
 const tableContainer = document.getElementById('table-container');
 const btnGrid        = document.getElementById('btn-grid');
 const btnTable       = document.getElementById('btn-table');
-const modalOverlay = document.getElementById('modal-overlay');
-const modalBox     = document.getElementById('modal-box');
-const modalClose   = document.getElementById('modal-close');
+const modalOverlay   = document.getElementById('modal-overlay');
+const modalBox       = document.getElementById('modal-box');
+const modalClose     = document.getElementById('modal-close');
+const modalAddTeam   = document.getElementById('modal-add-team');
+const teamSlots      = document.getElementById('team-slots');
+const btnAnalyze     = document.getElementById('btn-analyze');
+const btnClearTeam   = document.getElementById('btn-clear-team');
+const analysisOverlay  = document.getElementById('analysis-overlay');
+const analysisCloseBtn = document.getElementById('analysis-close');
+const analysisTitle    = document.getElementById('analysis-title');
+const analysisContent  = document.getElementById('analysis-content');
 
 function trimPokemon(d) {
   const sprites = d.sprites || {};
@@ -139,6 +151,9 @@ const I18N = {
     defEff: 'Type effectiveness (defensive)', offEff: 'Type effectiveness (offensive)',
     hiddenAbility: 'Hidden ability', noResults: 'No Pokémon found',
     colName: 'Name', colType: 'Type',
+    addToTeam: '+ Add to team', inTeam: '✓ In team',
+    analyzeTeam: '⚡ Analyze team', analyzing: 'Analyzing…', teamFull: 'Team full (max 6)',
+    analysisTitle: 'Team Analysis',
   },
   es: {
     searchPlaceholder: 'Buscar Pokémon por nombre...',
@@ -153,6 +168,9 @@ const I18N = {
     defEff: 'Efectividad de tipos (defensiva)', offEff: 'Efectividad de tipos (ofensiva)',
     hiddenAbility: 'Habilidad oculta', noResults: 'No se encontraron Pokémon',
     colName: 'Nombre', colType: 'Tipo',
+    addToTeam: '+ Añadir al equipo', inTeam: '✓ En el equipo',
+    analyzeTeam: '⚡ Analizar equipo', analyzing: 'Analizando…', teamFull: 'Equipo lleno (máx. 6)',
+    analysisTitle: 'Análisis del Equipo',
   },
 };
 
@@ -191,6 +209,9 @@ function updateUI() {
   document.getElementById('section-def-eff').textContent   = t.defEff;
   document.getElementById('section-off-eff').textContent   = t.offEff;
   updateTypeDropdown();
+  btnAnalyze.textContent = I18N[lang].analyzeTeam;
+  updateModalAddBtn();
+  refreshTeamButtons();
 }
 
 // ── FETCH ─────────────────────────────────────────────────────
@@ -437,6 +458,20 @@ function buildCard(d) {
   }
   card.appendChild(statsEl);
 
+  const addBtn = document.createElement('button');
+  addBtn.className = 'card-add-btn';
+  addBtn.dataset.id = d.id;
+  const inTeamNow = team.some(p => p.id === d.id);
+  addBtn.classList.toggle('in-team', inTeamNow);
+  addBtn.textContent = inTeamNow ? '✓' : '+';
+  addBtn.title = inTeamNow ? I18N[lang].inTeam : I18N[lang].addToTeam;
+  addBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    if (team.some(p => p.id === d.id)) removeFromTeam(d.id);
+    else if (team.length < 6) addToTeam(d);
+  });
+  card.appendChild(addBtn);
+
   card.addEventListener('click', () => openModal(d));
   return card;
 }
@@ -642,6 +677,8 @@ function updateModalContent(d) {
       .querySelectorAll('.modal-stat-bar-fill')
       .forEach(b => { b.style.width = b.dataset.pct + '%'; });
   });
+
+  updateModalAddBtn();
 }
 
 async function loadFormsForModal(d) {
@@ -875,6 +912,111 @@ function baseId(d) {
   const parts = (d.species?.url || '').split('/').filter(Boolean);
   return parts.length ? parseInt(parts[parts.length - 1]) : d.id;
 }
+
+// ── TEAM BUILDER ─────────────────────────────────────────────
+function addToTeam(d) {
+  if (team.length >= 6 || team.some(p => p.id === d.id)) return;
+  team.push(d);
+  renderTeamBar();
+  refreshTeamButtons();
+}
+
+function removeFromTeam(id) {
+  team = team.filter(p => p.id !== id);
+  renderTeamBar();
+  refreshTeamButtons();
+}
+
+function renderTeamBar() {
+  teamSlots.innerHTML = '';
+  for (let i = 0; i < 6; i++) {
+    const slot = document.createElement('div');
+    slot.className = 'team-slot' + (team[i] ? ' filled' : '');
+    if (team[i]) {
+      const p = team[i];
+      const sprite = p.sprites?.other?.['official-artwork']?.front_default
+                  || p.sprites?.other?.home?.front_default
+                  || p.sprites?.front_default || '';
+      if (sprite) {
+        const img = document.createElement('img');
+        img.src = sprite; img.alt = p.name; img.title = formatName(p.name);
+        slot.appendChild(img);
+      } else {
+        const sp = document.createElement('span');
+        sp.textContent = formatName(p.name).slice(0, 3);
+        slot.appendChild(sp);
+      }
+      const rem = document.createElement('div');
+      rem.className = 'slot-remove';
+      rem.textContent = '✕';
+      slot.appendChild(rem);
+      slot.addEventListener('click', () => removeFromTeam(p.id));
+    }
+    teamSlots.appendChild(slot);
+  }
+  btnAnalyze.disabled = team.length === 0;
+}
+
+function refreshTeamButtons() {
+  document.querySelectorAll('.card-add-btn').forEach(btn => {
+    const id = parseInt(btn.dataset.id);
+    const inT = team.some(p => p.id === id);
+    btn.classList.toggle('in-team', inT);
+    btn.textContent = inT ? '✓' : '+';
+    btn.title = inT ? I18N[lang].inTeam : I18N[lang].addToTeam;
+  });
+  updateModalAddBtn();
+}
+
+function updateModalAddBtn() {
+  if (!modalAddTeam || !currentModalData) {
+    if (modalAddTeam) { modalAddTeam.classList.remove('in-team'); modalAddTeam.textContent = I18N[lang].addToTeam; }
+    return;
+  }
+  const inT = team.some(p => p.id === currentModalData.id);
+  modalAddTeam.classList.toggle('in-team', inT);
+  modalAddTeam.textContent = inT ? I18N[lang].inTeam : I18N[lang].addToTeam;
+}
+
+async function analyzeTeam() {
+  if (team.length === 0) return;
+  const t = I18N[lang];
+  analysisTitle.textContent = t.analysisTitle;
+  analysisContent.innerHTML = `<div class="analysis-loading">${t.analyzing}</div>`;
+  analysisOverlay.classList.add('open');
+
+  try {
+    const teamData = team.map(p => ({
+      name: p.name,
+      types: p.types,
+      stats: p.stats,
+      abilities: (p.abilities || []).map(ab => ({ name: ab.name, is_hidden: ab.is_hidden })),
+    }));
+    const resp = await fetch(`${BACKEND_URL}/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ team: teamData, lang }),
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    analysisContent.innerHTML = data.analysis
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n/g, '<br>');
+  } catch (e) {
+    analysisContent.innerHTML = `<div class="analysis-loading" style="color:#ff6b6b">Error: ${e.message}</div>`;
+  }
+}
+
+// Team bar events
+btnAnalyze.addEventListener('click', analyzeTeam);
+btnClearTeam.addEventListener('click', () => { team = []; renderTeamBar(); refreshTeamButtons(); });
+analysisCloseBtn.addEventListener('click', () => analysisOverlay.classList.remove('open'));
+analysisOverlay.addEventListener('click', e => { if (e.target === analysisOverlay) analysisOverlay.classList.remove('open'); });
+modalAddTeam.addEventListener('click', () => {
+  if (!currentModalData) return;
+  if (team.some(p => p.id === currentModalData.id)) removeFromTeam(currentModalData.id);
+  else if (team.length < 6) addToTeam(currentModalData);
+});
 
 // ── START ─────────────────────────────────────────────────────
 init();
