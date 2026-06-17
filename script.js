@@ -378,7 +378,7 @@ function buildCard(d) {
 
   const num = document.createElement('div');
   num.className = 'card-num';
-  num.textContent = `#${String(d.id).padStart(4, '0')}`;
+  num.textContent = `#${String(baseId(d)).padStart(4, '0')}`;
   card.appendChild(num);
 
   const imgWrap = document.createElement('div');
@@ -603,7 +603,7 @@ function updateModalContent(d) {
     img.style.display = 'none';
   }
 
-  document.getElementById('modal-num').textContent  = `#${String(d.id).padStart(4, '0')}`;
+  document.getElementById('modal-num').textContent  = `#${String(baseId(d)).padStart(4, '0')}`;
   document.getElementById('modal-name').textContent = formatName(d.name);
   document.getElementById('modal-types').innerHTML  =
     types.map(t => `<span class="type-badge t-${t}">${typeName(t)}</span>`).join('');
@@ -818,7 +818,7 @@ function renderTable() {
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td class="col-id">#${String(d.id).padStart(4, '0')}</td>
+      <td class="col-id">#${String(baseId(d)).padStart(4, '0')}</td>
       <td class="col-name"><div class="col-name-inner">
         <img src="${spriteFromId(d.id)}" loading="lazy" alt="" onerror="this.style.display='none'">
         <span>${formatName(d.name)}</span>
@@ -870,6 +870,11 @@ observer.observe(document.getElementById('sentinel'));
 // ── HELPERS ───────────────────────────────────────────────────
 function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 function formatName(n) { return n.split('-').map(capitalize).join(' '); }
+function baseId(d) {
+  if (!d || d.id <= 1025) return d?.id ?? 0;
+  const parts = (d.species?.url || '').split('/').filter(Boolean);
+  return parts.length ? parseInt(parts[parts.length - 1]) : d.id;
+}
 
 // ── START ─────────────────────────────────────────────────────
 init();
