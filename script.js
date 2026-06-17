@@ -86,7 +86,7 @@ let formsFilterVal = '';
 let viewMode        = 'grid';
 let tableSortCol    = '';
 let tableSortDir    = 1;
-let lang            = 'es';
+let lang            = 'en';
 let currentModalData = null;
 
 // ── DOM REFS ──────────────────────────────────────────────────

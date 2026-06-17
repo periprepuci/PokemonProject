@@ -728,15 +728,15 @@ main {
 .lang-btn {
   background: none;
   border: none;
-  padding: 0 11px;
+  padding: 0 10px;
   height: 36px;
   cursor: pointer;
-  font-size: 19px;
   display: flex;
   align-items: center;
-  opacity: .45;
+  opacity: .4;
   transition: opacity .15s, background .15s;
 }
+.lang-btn svg { border-radius: 2px; display: block; }
 .lang-btn.active  { opacity: 1; background: rgba(255,255,255,.09); }
 .lang-btn:hover:not(.active) { opacity: .75; }
 
