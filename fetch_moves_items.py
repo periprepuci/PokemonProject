@@ -49,9 +49,9 @@ def fetch_all(endpoint, out_file, label):
 
     with open(out_file, 'w', encoding='utf-8') as f:
         json.dump(result, f, ensure_ascii=False)
-    print(f'{label}: ¡listo! {len(result)} entradas → {out_file}')
+    print(f'{label}: listo! {len(result)} entradas -> {out_file}')
 
 if __name__ == '__main__':
     os.makedirs('data', exist_ok=True)
     fetch_all('move', 'data/moves.json', 'Movimientos')
-    fetch_all('item', 'data/items.json', 'Ítems')
+    fetch_all('item', 'data/items.json', 'Items')
