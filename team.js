@@ -77,13 +77,14 @@ function baseId(d) {
 
 // ── INIT ──────────────────────────────────────────────────────
 async function init() {
-  const [listData, detailsData, movesRaw, itemsRaw, abilitiesRaw, patchRaw] = await Promise.all([
+  const [listData, detailsData, movesRaw, itemsRaw, abilitiesRaw, patchRaw, itemsPatch] = await Promise.all([
     fetch('./data/pokemon-list.json').then(r => r.json()),
     fetch('./data/pokemon-details.json').then(r => r.json()),
     fetch('./data/moves.json').then(r => r.json()).catch(() => ({})),
     fetch('./data/items.json').then(r => r.json()).catch(() => ({})),
     fetch('./data/abilities.json').then(r => r.json()).catch(() => ({})),
     fetch('./data/mega-abilities-patch.json').then(r => r.json()).catch(() => ({})),
+    fetch('./data/items-patch.json').then(r => r.json()).catch(() => []),
   ]);
 
   allPokemon = listData;
@@ -98,6 +99,12 @@ async function init() {
 
   movesList = Object.entries(movesRaw).map(([slug, n]) => ({ slug, en: n.en||slug, es: n.es||n.en||slug }));
   itemsList = Object.entries(itemsRaw).map(([slug, n]) => ({ slug, en: n.en||slug, es: n.es||n.en||slug }));
+
+  // Merge custom mega stones (avoid duplicates by slug)
+  const existingSlugs = new Set(itemsList.map(i => i.slug));
+  for (const item of itemsPatch) {
+    if (!existingSlugs.has(item.slug)) itemsList.push(item);
+  }
 
   updateUI();
   renderSlots();
