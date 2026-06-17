@@ -43,22 +43,19 @@ def build_prompt(team, lang):
     lines = []
     for p in team:
         name   = p["name"].replace("-", " ").title()
-        types  = "/".join(t["type"]["name"] for t in p.get("types", []))
-        stats  = {s["stat"]["name"]: s["base_stat"] for s in p.get("stats", [])}
-        abs_   = [a["name"] for a in p.get("abilities", []) if not a.get("is_hidden")]
-        hidden = next((a["name"] for a in p.get("abilities", []) if a.get("is_hidden")), None)
-        item   = p.get("item", "").strip()
-        moves  = [m.strip() for m in p.get("moves", []) if str(m).strip()]
+        types    = "/".join(t["type"]["name"] for t in p.get("types", []))
+        stats    = {s["stat"]["name"]: s["base_stat"] for s in p.get("stats", [])}
+        ability  = p.get("selectedAbility", "").strip()
+        item     = p.get("item", "").strip()
+        moves    = [m.strip() for m in p.get("moves", []) if str(m).strip()]
 
         stat_s = (f"HP {stats.get('hp',0)} / Atk {stats.get('attack',0)} / "
                   f"Def {stats.get('defense',0)} / SpA {stats.get('special-attack',0)} / "
                   f"SpD {stats.get('special-defense',0)} / Spe {stats.get('speed',0)}")
 
         line = f"- {name} [{types}] {stat_s}"
-        if abs_:
-            line += f" | Abilities: {', '.join(abs_)}"
-        if hidden:
-            line += f" (HA: {hidden})"
+        if ability:
+            line += f" | Ability: {ability}"
         if item:
             line += f" | Item: {item}"
         if moves:

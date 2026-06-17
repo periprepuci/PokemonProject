@@ -21,6 +21,7 @@ const TYPE_NAMES_ES = {
 const I18N = {
   en: {
     pageTitle:'Team Builder', back:'← Pokédex', addPokemon:'Add Pokémon',
+    ability:'Ability', hiddenAbility:'Hidden',
     item:'Held item', moves:'Moves', analyze:'⚡ Analyze Team',
     analyzing:'Analyzing…', analysisTitle:'Team Analysis',
     searchPlaceholder:'Search Pokémon…', remove:'Remove',
@@ -29,6 +30,7 @@ const I18N = {
   },
   es: {
     pageTitle:'Team Builder', back:'← Pokédex', addPokemon:'Añadir Pokémon',
+    ability:'Habilidad', hiddenAbility:'Oculta',
     item:'Objeto', moves:'Movimientos', analyze:'⚡ Analizar Equipo',
     analyzing:'Analizando…', analysisTitle:'Análisis del Equipo',
     searchPlaceholder:'Buscar Pokémon…', remove:'Quitar',
@@ -38,12 +40,13 @@ const I18N = {
 };
 
 // ── STATE ────────────────────────────────────────────────────
-let lang        = 'en';
-let allPokemon  = [];
-let detailCache = new Map();
-let movesList   = [];   // [{slug, en, es}, ...]
-let itemsList   = [];
-let team = Array.from({length: 6}, () => ({ pokemon:null, item:'', moves:['','','',''] }));
+let lang         = 'en';
+let allPokemon   = [];
+let detailCache  = new Map();
+let abilityNames = new Map();   // eng slug → Spanish name
+let movesList    = [];
+let itemsList    = [];
+let team = Array.from({length: 6}, () => ({ pokemon:null, ability:'', item:'', moves:['','','',''] }));
 let pickerSlot  = -1;
 
 // ── DOM ───────────────────────────────────────────────────────
@@ -72,15 +75,17 @@ function baseId(d) {
 
 // ── INIT ──────────────────────────────────────────────────────
 async function init() {
-  const [listData, detailsData, movesRaw, itemsRaw] = await Promise.all([
+  const [listData, detailsData, movesRaw, itemsRaw, abilitiesRaw] = await Promise.all([
     fetch('./data/pokemon-list.json').then(r => r.json()),
     fetch('./data/pokemon-details.json').then(r => r.json()),
     fetch('./data/moves.json').then(r => r.json()).catch(() => ({})),
     fetch('./data/items.json').then(r => r.json()).catch(() => ({})),
+    fetch('./data/abilities.json').then(r => r.json()).catch(() => ({})),
   ]);
 
   allPokemon = listData;
   for (const [url, d] of Object.entries(detailsData)) detailCache.set(url, d);
+  for (const [eng, es] of Object.entries(abilitiesRaw)) abilityNames.set(eng, es);
 
   movesList = Object.entries(movesRaw).map(([slug, n]) => ({ slug, en: n.en||slug, es: n.es||n.en||slug }));
   itemsList = Object.entries(itemsRaw).map(([slug, n]) => ({ slug, en: n.en||slug, es: n.es||n.en||slug }));
@@ -257,6 +262,30 @@ function renderFilled(i) {
   const inputs = document.createElement('div');
   inputs.className = 'slot-inputs';
 
+  // Ability select
+  const abilities = d.abilities || [];
+  if (abilities.length) {
+    const abilityGroup = document.createElement('div');
+    abilityGroup.className = 'input-group';
+    abilityGroup.innerHTML = `<label>${t.ability}</label>`;
+    const sel = document.createElement('select');
+    sel.className = 'slot-ability';
+    abilities.forEach(ab => {
+      const opt = document.createElement('option');
+      opt.value = ab.name;
+      const display = lang === 'es'
+        ? (abilityNames.get(ab.name) || formatName(ab.name))
+        : formatName(ab.name);
+      opt.textContent = ab.is_hidden ? `${display} (${t.hiddenAbility})` : display;
+      opt.selected = slot.ability ? ab.name === slot.ability : ab.slot === 1;
+      sel.appendChild(opt);
+    });
+    if (!slot.ability) team[i].ability = sel.value;
+    sel.addEventListener('change', e => { team[i].ability = e.target.value; });
+    abilityGroup.appendChild(sel);
+    inputs.appendChild(abilityGroup);
+  }
+
   // Item
   const itemGroup = document.createElement('div');
   itemGroup.className = 'input-group';
@@ -298,7 +327,7 @@ function renderFilled(i) {
 }
 
 function clearSlot(i) {
-  team[i] = { pokemon:null, item:'', moves:['','','',''] };
+  team[i] = { pokemon:null, ability:'', item:'', moves:['','','',''] };
   renderSlots();
 }
 
@@ -360,12 +389,12 @@ async function analyzeTeam() {
   analysisOverlay.classList.add('open');
 
   const teamData = filled.map(s => ({
-    name:      s.pokemon.name,
-    types:     s.pokemon.types,
-    stats:     s.pokemon.stats,
-    abilities: (s.pokemon.abilities||[]).map(ab => ({name:ab.name, is_hidden:ab.is_hidden})),
-    item:      s.item,
-    moves:     s.moves,
+    name:             s.pokemon.name,
+    types:            s.pokemon.types,
+    stats:            s.pokemon.stats,
+    selectedAbility:  s.ability,
+    item:             s.item,
+    moves:            s.moves,
   }));
 
   try {
