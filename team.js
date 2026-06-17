@@ -20,45 +20,31 @@ const TYPE_NAMES_ES = {
 
 const I18N = {
   en: {
-    pageTitle: 'Team Builder',
-    back: '← Pokédex',
-    addPokemon: 'Add Pokémon',
-    item: 'Held item',
-    moves: 'Moves',
-    analyze: '⚡ Analyze Team',
-    analyzing: 'Analyzing…',
-    analysisTitle: 'Team Analysis',
-    searchPlaceholder: 'Search Pokémon…',
-    remove: 'Remove',
-    noResults: 'No Pokémon found',
-    itemPlaceholder: 'e.g. Choice Specs',
-    move: n => `Move ${n}`,
-    clickToChange: 'Click to change',
+    pageTitle:'Team Builder', back:'← Pokédex', addPokemon:'Add Pokémon',
+    item:'Held item', moves:'Moves', analyze:'⚡ Analyze Team',
+    analyzing:'Analyzing…', analysisTitle:'Team Analysis',
+    searchPlaceholder:'Search Pokémon…', remove:'Remove',
+    noResults:'No Pokémon found', itemPlaceholder:'e.g. Choice Specs',
+    move: n => `Move ${n}`, clickToChange:'Click to change',
   },
   es: {
-    pageTitle: 'Team Builder',
-    back: '← Pokédex',
-    addPokemon: 'Añadir Pokémon',
-    item: 'Objeto',
-    moves: 'Movimientos',
-    analyze: '⚡ Analizar Equipo',
-    analyzing: 'Analizando…',
-    analysisTitle: 'Análisis del Equipo',
-    searchPlaceholder: 'Buscar Pokémon…',
-    remove: 'Quitar',
-    noResults: 'No se encontraron Pokémon',
-    itemPlaceholder: 'ej. Gafas Elegidas',
-    move: n => `Movimiento ${n}`,
-    clickToChange: 'Click para cambiar',
+    pageTitle:'Team Builder', back:'← Pokédex', addPokemon:'Añadir Pokémon',
+    item:'Objeto', moves:'Movimientos', analyze:'⚡ Analizar Equipo',
+    analyzing:'Analizando…', analysisTitle:'Análisis del Equipo',
+    searchPlaceholder:'Buscar Pokémon…', remove:'Quitar',
+    noResults:'No se encontraron Pokémon', itemPlaceholder:'ej. Restos',
+    move: n => `Movimiento ${n}`, clickToChange:'Click para cambiar',
   },
 };
 
 // ── STATE ────────────────────────────────────────────────────
-let lang       = 'en';
-let allPokemon = [];
+let lang        = 'en';
+let allPokemon  = [];
 let detailCache = new Map();
-let team = Array.from({length: 6}, () => ({ pokemon: null, item: '', moves: ['','','',''] }));
-let pickerSlot = -1;
+let movesList   = [];   // [{slug, en, es}, ...]
+let itemsList   = [];
+let team = Array.from({length: 6}, () => ({ pokemon:null, item:'', moves:['','','',''] }));
+let pickerSlot  = -1;
 
 // ── DOM ───────────────────────────────────────────────────────
 const teamGrid       = document.getElementById('team-grid');
@@ -73,12 +59,11 @@ const analysisTitleEl  = document.getElementById('analysis-title');
 const analysisContent  = document.getElementById('analysis-content');
 
 // ── HELPERS ───────────────────────────────────────────────────
-function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
-function formatName(n) { return n.split('-').map(capitalize).join(' '); }
-function typeName(t)   { return lang === 'es' ? (TYPE_NAMES_ES[t] || capitalize(t)) : capitalize(t); }
-function spriteUrl(id) {
-  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
-}
+const capitalize = s => s.charAt(0).toUpperCase() + s.slice(1);
+const formatName = n => n.split('-').map(capitalize).join(' ');
+const typeName   = t => lang === 'es' ? (TYPE_NAMES_ES[t] || capitalize(t)) : capitalize(t);
+const spriteUrl  = id =>
+  `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
 function baseId(d) {
   if (!d || d.id <= 1025) return d?.id ?? 0;
   const parts = (d.species?.url || '').split('/').filter(Boolean);
@@ -87,12 +72,19 @@ function baseId(d) {
 
 // ── INIT ──────────────────────────────────────────────────────
 async function init() {
-  const [listData, detailsData] = await Promise.all([
+  const [listData, detailsData, movesRaw, itemsRaw] = await Promise.all([
     fetch('./data/pokemon-list.json').then(r => r.json()),
     fetch('./data/pokemon-details.json').then(r => r.json()),
+    fetch('./data/moves.json').then(r => r.json()).catch(() => ({})),
+    fetch('./data/items.json').then(r => r.json()).catch(() => ({})),
   ]);
+
   allPokemon = listData;
   for (const [url, d] of Object.entries(detailsData)) detailCache.set(url, d);
+
+  movesList = Object.entries(movesRaw).map(([slug, n]) => ({ slug, en: n.en||slug, es: n.es||n.en||slug }));
+  itemsList = Object.entries(itemsRaw).map(([slug, n]) => ({ slug, en: n.en||slug, es: n.es||n.en||slug }));
+
   updateUI();
   renderSlots();
 }
@@ -102,22 +94,95 @@ function updateUI() {
   const t = I18N[lang];
   document.getElementById('page-title').textContent = t.pageTitle;
   document.getElementById('back-link').textContent  = t.back;
-  btnAnalyze.textContent  = t.analyze;
+  btnAnalyze.textContent     = t.analyze;
   pickerSearchEl.placeholder = t.searchPlaceholder;
   renderSlots();
+}
+
+// ── AUTOCOMPLETE ─────────────────────────────────────────────
+function acLabel(item) { return item[lang] || item.en; }
+
+function attachAutocomplete(input, list) {
+  let dropdown = null;
+  let activeIdx = -1;
+
+  function close() {
+    if (dropdown) { dropdown.remove(); dropdown = null; activeIdx = -1; }
+  }
+
+  function open(q) {
+    close();
+    if (!q) return;
+    const ql = q.toLowerCase();
+
+    const matches = list
+      .filter(x => {
+        const en = x.en.toLowerCase(), es = (x.es||'').toLowerCase();
+        return en.includes(ql) || es.includes(ql);
+      })
+      .sort((a, b) => {
+        const al = acLabel(a).toLowerCase(), bl = acLabel(b).toLowerCase();
+        return (al.startsWith(ql) ? 0 : 1) - (bl.startsWith(ql) ? 0 : 1)
+            || al.localeCompare(bl);
+      })
+      .slice(0, 10);
+
+    if (!matches.length) return;
+
+    dropdown = document.createElement('ul');
+    dropdown.className = 'ac-dropdown';
+
+    matches.forEach(item => {
+      const li = document.createElement('li');
+      li.className = 'ac-option';
+      li.textContent = acLabel(item);
+      li.addEventListener('mousedown', e => {
+        e.preventDefault();
+        input.value = acLabel(item);
+        input.dispatchEvent(new Event('input', {bubbles:true}));
+        close();
+      });
+      dropdown.appendChild(li);
+    });
+
+    input.closest('.ac-wrap').appendChild(dropdown);
+  }
+
+  input.addEventListener('input',  e => open(e.target.value));
+  input.addEventListener('focus',  e => { if (e.target.value) open(e.target.value); });
+  input.addEventListener('blur',   () => setTimeout(close, 150));
+  input.addEventListener('keydown', e => {
+    if (!dropdown) return;
+    const opts = dropdown.querySelectorAll('.ac-option');
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      activeIdx = Math.min(activeIdx + 1, opts.length - 1);
+      opts.forEach((o, i) => o.classList.toggle('active', i === activeIdx));
+      opts[activeIdx]?.scrollIntoView({block:'nearest'});
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      activeIdx = Math.max(activeIdx - 1, 0);
+      opts.forEach((o, i) => o.classList.toggle('active', i === activeIdx));
+      opts[activeIdx]?.scrollIntoView({block:'nearest'});
+    } else if (e.key === 'Enter' && activeIdx >= 0) {
+      e.preventDefault();
+      input.value = opts[activeIdx].textContent;
+      input.dispatchEvent(new Event('input', {bubbles:true}));
+      close();
+    } else if (e.key === 'Escape') {
+      close();
+    }
+  });
 }
 
 // ── RENDER SLOTS ──────────────────────────────────────────────
 function renderSlots() {
   teamGrid.innerHTML = '';
-  team.forEach((slot, i) => {
-    teamGrid.appendChild(slot.pokemon ? renderFilled(i) : renderEmpty(i));
-  });
+  team.forEach((slot, i) => teamGrid.appendChild(slot.pokemon ? renderFilled(i) : renderEmpty(i)));
   btnAnalyze.disabled = !team.some(s => s.pokemon);
 }
 
 function renderEmpty(i) {
-  const t = I18N[lang];
   const card = document.createElement('div');
   card.className = 'team-card empty';
   card.innerHTML = `
@@ -125,16 +190,16 @@ function renderEmpty(i) {
       <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M12 5v14M5 12h14"/>
       </svg>
-      <span>${t.addPokemon}</span>
+      <span>${I18N[lang].addPokemon}</span>
     </button>`;
   card.addEventListener('click', () => openPicker(i));
   return card;
 }
 
 function renderFilled(i) {
-  const t    = I18N[lang];
-  const slot = team[i];
-  const d    = slot.pokemon;
+  const t     = I18N[lang];
+  const slot  = team[i];
+  const d     = slot.pokemon;
   const types = d.types.map(x => x.type.name);
   const sprite = d.sprites?.other?.['official-artwork']?.front_default
               || d.sprites?.other?.home?.front_default
@@ -144,11 +209,13 @@ function renderFilled(i) {
   const card = document.createElement('div');
   card.className = 'team-card filled';
 
+  // Background glow
   const bg = document.createElement('div');
   bg.className = 'card-top-bg';
   bg.style.background = `radial-gradient(circle at 65% 15%, ${mainColor}44 0%, transparent 68%)`;
   card.appendChild(bg);
 
+  // Remove button
   const removeBtn = document.createElement('button');
   removeBtn.className = 'remove-slot-btn';
   removeBtn.title = t.remove;
@@ -156,7 +223,7 @@ function renderFilled(i) {
   removeBtn.addEventListener('click', e => { e.stopPropagation(); clearSlot(i); });
   card.appendChild(removeBtn);
 
-  // Header (click to change Pokémon)
+  // Header (click to change)
   const header = document.createElement('div');
   header.className = 'slot-header';
   header.title = t.clickToChange;
@@ -170,33 +237,43 @@ function renderFilled(i) {
   header.addEventListener('click', () => openPicker(i));
   card.appendChild(header);
 
-  // Item + moves inputs
+  // Inputs section
   const inputs = document.createElement('div');
   inputs.className = 'slot-inputs';
 
+  // Item
   const itemGroup = document.createElement('div');
   itemGroup.className = 'input-group';
   itemGroup.innerHTML = `<label>${t.item}</label>`;
+  const itemWrap = document.createElement('div');
+  itemWrap.className = 'ac-wrap';
   const itemInput = document.createElement('input');
   itemInput.type = 'text';
   itemInput.className = 'slot-item';
   itemInput.placeholder = t.itemPlaceholder;
   itemInput.value = slot.item;
   itemInput.addEventListener('input', e => { team[i].item = e.target.value; });
-  itemGroup.appendChild(itemInput);
+  itemWrap.appendChild(itemInput);
+  itemGroup.appendChild(itemWrap);
   inputs.appendChild(itemGroup);
+  if (itemsList.length) attachAutocomplete(itemInput, itemsList);
 
+  // Moves
   const movesGroup = document.createElement('div');
   movesGroup.className = 'input-group';
   movesGroup.innerHTML = `<label>${t.moves}</label>`;
   [0,1,2,3].forEach(m => {
+    const wrap = document.createElement('div');
+    wrap.className = 'ac-wrap';
     const mv = document.createElement('input');
     mv.type = 'text';
     mv.className = 'slot-move';
     mv.placeholder = t.move(m + 1);
     mv.value = slot.moves[m];
     mv.addEventListener('input', e => { team[i].moves[m] = e.target.value; });
-    movesGroup.appendChild(mv);
+    wrap.appendChild(mv);
+    movesGroup.appendChild(wrap);
+    if (movesList.length) attachAutocomplete(mv, movesList);
   });
   inputs.appendChild(movesGroup);
   card.appendChild(inputs);
@@ -205,7 +282,7 @@ function renderFilled(i) {
 }
 
 function clearSlot(i) {
-  team[i] = { pokemon: null, item: '', moves: ['','','',''] };
+  team[i] = { pokemon:null, item:'', moves:['','','',''] };
   renderSlots();
 }
 
@@ -228,7 +305,7 @@ function renderPickerGrid(search) {
   const results = allPokemon.filter(p => !q || p.name.includes(q)).slice(0, 100);
   const frag = document.createDocumentFragment();
 
-  if (results.length === 0) {
+  if (!results.length) {
     const empty = document.createElement('div');
     empty.className = 'picker-empty';
     empty.textContent = I18N[lang].noResults;
@@ -243,12 +320,10 @@ function renderPickerGrid(search) {
         <img src="${spriteUrl(p.id)}" alt="${p.name}" loading="lazy" onerror="this.style.display='none'">
         <div class="picker-item-num">#${String(p.id).padStart(4,'0')}</div>
         <div class="picker-item-name">${formatName(p.name)}</div>
-        <div class="picker-item-types">${types.map(tp => `<span class="type-badge t-${tp} sm">${typeName(tp)}</span>`).join('')}</div>`;
+        <div class="picker-item-types">${types.map(tp =>
+          `<span class="type-badge t-${tp} sm">${typeName(tp)}</span>`).join('')}</div>`;
       el.addEventListener('click', () => {
-        if (d) {
-          team[pickerSlot].pokemon = d;
-          renderSlots();
-        }
+        if (d) { team[pickerSlot].pokemon = d; renderSlots(); }
         closePicker();
       });
       frag.appendChild(el);
@@ -261,7 +336,7 @@ function renderPickerGrid(search) {
 // ── ANALYZE ───────────────────────────────────────────────────
 async function analyzeTeam() {
   const filled = team.filter(s => s.pokemon);
-  if (filled.length === 0) return;
+  if (!filled.length) return;
 
   const t = I18N[lang];
   analysisTitleEl.textContent = t.analysisTitle;
@@ -272,7 +347,7 @@ async function analyzeTeam() {
     name:      s.pokemon.name,
     types:     s.pokemon.types,
     stats:     s.pokemon.stats,
-    abilities: (s.pokemon.abilities || []).map(ab => ({ name: ab.name, is_hidden: ab.is_hidden })),
+    abilities: (s.pokemon.abilities||[]).map(ab => ({name:ab.name, is_hidden:ab.is_hidden})),
     item:      s.item,
     moves:     s.moves,
   }));
@@ -295,18 +370,14 @@ async function analyzeTeam() {
 
 // ── EVENTS ────────────────────────────────────────────────────
 btnAnalyze.addEventListener('click', analyzeTeam);
-
 pickerCloseBtn.addEventListener('click', closePicker);
 pickerOverlay.addEventListener('click', e => { if (e.target === pickerOverlay) closePicker(); });
 pickerSearchEl.addEventListener('input', e => renderPickerGrid(e.target.value));
-
 analysisCloseBtn.addEventListener('click', () => analysisOverlay.classList.remove('open'));
 analysisOverlay.addEventListener('click', e => { if (e.target === analysisOverlay) analysisOverlay.classList.remove('open'); });
-
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closePicker(); analysisOverlay.classList.remove('open'); }
 });
-
 document.querySelectorAll('.lang-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     lang = btn.dataset.lang;
