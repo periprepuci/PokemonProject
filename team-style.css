@@ -236,6 +236,7 @@
   padding: 12px;
   overflow-y: auto;
   flex: 1;
+  align-content: start;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
 }
