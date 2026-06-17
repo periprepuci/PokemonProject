@@ -73,6 +73,9 @@ let genFilterVal  = '';
 let searchVal     = '';
 let statSortVal    = '';
 let formsFilterVal = '';
+let viewMode       = 'grid';
+let tableSortCol   = '';
+let tableSortDir   = 1; // 1 = desc, -1 = asc
 
 // ── DOM REFS ──────────────────────────────────────────────────
 const grid         = document.getElementById('grid');
@@ -82,8 +85,11 @@ const loader       = document.getElementById('loader');
 const searchEl     = document.getElementById('search');
 const typeSelect   = document.getElementById('type-filter');
 const genSelect    = document.getElementById('gen-filter');
-const formsFilterEl = document.getElementById('forms-filter');
-const statSortEl    = document.getElementById('stat-sort');
+const formsFilterEl  = document.getElementById('forms-filter');
+const statSortEl     = document.getElementById('stat-sort');
+const tableContainer = document.getElementById('table-container');
+const btnGrid        = document.getElementById('btn-grid');
+const btnTable       = document.getElementById('btn-table');
 const modalOverlay = document.getElementById('modal-overlay');
 const modalBox     = document.getElementById('modal-box');
 const modalClose   = document.getElementById('modal-close');
@@ -205,18 +211,23 @@ function applyFilters() {
     return true;
   });
 
-  if (statSortVal) {
+  if (statSortVal && viewMode === 'grid') {
     filtered.sort((a, b) =>
       getStatVal(detailCache.get(b.url), statSortVal) -
       getStatVal(detailCache.get(a.url), statSortVal)
     );
   }
 
-  page = 0;
-  grid.innerHTML = '';
   emptyEl.style.display = filtered.length === 0 ? 'block' : 'none';
   statusBar.textContent = `${filtered.length.toLocaleString()} Pokémon encontrados`;
-  loadNextPage();
+
+  if (viewMode === 'table') {
+    renderTable();
+  } else {
+    page = 0;
+    grid.innerHTML = '';
+    loadNextPage();
+  }
 }
 
 // ── PAGINATION ────────────────────────────────────────────────
@@ -627,6 +638,8 @@ document.getElementById('logo').addEventListener('click', () => {
   genFilterVal        = '';
   statSortVal         = '';
   formsFilterVal      = '';
+  tableSortCol        = '';
+  tableSortDir        = 1;
   window.scrollTo({ top: 0, behavior: 'smooth' });
   applyFilters();
 });
@@ -642,6 +655,96 @@ typeSelect.addEventListener('change',  () => { typeFilterVal = typeSelect.value;
 genSelect.addEventListener('change',   () => { genFilterVal  = genSelect.value;   applyFilters(); });
 formsFilterEl.addEventListener('change', () => { formsFilterVal = formsFilterEl.value; applyFilters(); });
 statSortEl.addEventListener('change',    () => { statSortVal    = statSortEl.value;    applyFilters(); });
+
+// ── TABLE VIEW ────────────────────────────────────────────────
+function setView(mode) {
+  viewMode = mode;
+  btnGrid.classList.toggle('active',  mode === 'grid');
+  btnTable.classList.toggle('active', mode === 'table');
+  grid.style.display           = mode === 'grid'  ? '' : 'none';
+  document.getElementById('sentinel').style.display = mode === 'grid' ? '' : 'none';
+  tableContainer.style.display = mode === 'table' ? '' : 'none';
+  statSortEl.style.display     = mode === 'grid'  ? '' : 'none';
+  if (mode === 'table') {
+    renderTable();
+  } else {
+    page = 0;
+    grid.innerHTML = '';
+    loadNextPage();
+  }
+}
+
+function renderTable() {
+  const rows = [...filtered];
+  if (tableSortCol) {
+    rows.sort((a, b) =>
+      tableSortDir * (
+        getStatVal(detailCache.get(b.url), tableSortCol) -
+        getStatVal(detailCache.get(a.url), tableSortCol)
+      )
+    );
+  }
+
+  const colDefs = [
+    { key: 'total', label: 'Total' },
+    ...STAT_META.map(({ key, label }) => ({ key, label })),
+  ];
+  const arrow = col =>
+    tableSortCol !== col ? '↕' : tableSortDir === 1 ? '↓' : '↑';
+
+  const table = document.createElement('table');
+  table.id = 'poke-table';
+  table.innerHTML = `<thead><tr>
+    <th>#</th>
+    <th>Nombre</th>
+    <th>Tipo</th>
+    ${colDefs.map(c =>
+      `<th class="th-stat sortable${tableSortCol === c.key ? ' sort-active' : ''}" data-col="${c.key}">${c.label}<span class="sort-arrow"> ${arrow(c.key)}</span></th>`
+    ).join('')}
+  </tr></thead>`;
+
+  const tbody = document.createElement('tbody');
+  const frag  = document.createDocumentFragment();
+
+  for (const p of rows) {
+    const d = detailCache.get(p.url);
+    if (!d) continue;
+    const types = d.types.map(t => t.type.name);
+    const sm    = {};
+    for (const s of d.stats) sm[s.stat.name] = s.base_stat;
+    const total = STAT_META.reduce((n, { key }) => n + (sm[key] ?? 0), 0);
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="col-id">#${String(d.id).padStart(4, '0')}</td>
+      <td class="col-name"><div class="col-name-inner">
+        <img src="${spriteFromId(d.id)}" loading="lazy" alt="" onerror="this.style.display='none'">
+        <span>${formatName(d.name)}</span>
+      </div></td>
+      <td class="col-type">${types.map(t => `<span class="type-badge t-${t}">${capitalize(t)}</span>`).join(' ')}</td>
+      <td class="col-stat" style="color:${statColor(total / STAT_META.length)}">${total}</td>
+      ${STAT_META.map(({ key }) => { const v = sm[key] ?? 0; return `<td class="col-stat" style="color:${statColor(v)}">${v}</td>`; }).join('')}
+    `;
+    tr.addEventListener('click', () => openModal(d));
+    frag.appendChild(tr);
+  }
+  tbody.appendChild(frag);
+  table.appendChild(tbody);
+  tableContainer.innerHTML = '';
+  tableContainer.appendChild(table);
+
+  table.querySelectorAll('th.sortable').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = th.dataset.col;
+      if (tableSortCol === col) tableSortDir *= -1;
+      else { tableSortCol = col; tableSortDir = 1; }
+      renderTable();
+    });
+  });
+}
+
+btnGrid.addEventListener('click',  () => setView('grid'));
+btnTable.addEventListener('click', () => setView('table'));
 
 // ── INFINITE SCROLL ───────────────────────────────────────────
 const observer = new IntersectionObserver(

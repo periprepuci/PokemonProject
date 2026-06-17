@@ -51,6 +51,23 @@
       <option value="special-defense">Def. Especial</option>
       <option value="speed">Velocidad</option>
     </select>
+    <div class="view-toggle">
+      <button id="btn-grid" class="view-btn active" title="Cuadrícula">
+        <svg viewBox="0 0 16 16" fill="currentColor">
+          <rect x="1" y="1" width="6" height="6" rx="1"/>
+          <rect x="9" y="1" width="6" height="6" rx="1"/>
+          <rect x="1" y="9" width="6" height="6" rx="1"/>
+          <rect x="9" y="9" width="6" height="6" rx="1"/>
+        </svg>
+      </button>
+      <button id="btn-table" class="view-btn" title="Tabla">
+        <svg viewBox="0 0 16 16" fill="currentColor">
+          <rect x="1" y="2"  width="14" height="3" rx="1"/>
+          <rect x="1" y="7"  width="14" height="3" rx="1"/>
+          <rect x="1" y="12" width="14" height="3" rx="1"/>
+        </svg>
+      </button>
+    </div>
   </div>
 </header>
 
@@ -58,6 +75,7 @@
 
 <main>
   <div id="grid"></div>
+  <div id="table-container"></div>
   <div id="empty">
     <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
       <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
