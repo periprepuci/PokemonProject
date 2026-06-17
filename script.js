@@ -663,7 +663,7 @@ function setView(mode) {
   btnTable.classList.toggle('active', mode === 'table');
   grid.style.display           = mode === 'grid'  ? '' : 'none';
   document.getElementById('sentinel').style.display = mode === 'grid' ? '' : 'none';
-  tableContainer.style.display = mode === 'table' ? '' : 'none';
+  tableContainer.style.display = mode === 'table' ? 'block' : 'none';
   statSortEl.style.display     = mode === 'grid'  ? '' : 'none';
   if (mode === 'table') {
     renderTable();
