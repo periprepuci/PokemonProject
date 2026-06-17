@@ -80,7 +80,6 @@ let tableSortDir   = 1; // 1 = desc, -1 = asc
 // ── DOM REFS ──────────────────────────────────────────────────
 const grid         = document.getElementById('grid');
 const emptyEl      = document.getElementById('empty');
-const statusBar    = document.getElementById('status-bar');
 const loader       = document.getElementById('loader');
 const searchEl     = document.getElementById('search');
 const typeSelect   = document.getElementById('type-filter');
@@ -137,7 +136,6 @@ async function getPokemonDetail(url) {
 
 // ── INIT ──────────────────────────────────────────────────────
 async function init() {
-  statusBar.textContent = 'Cargando datos locales...';
   try {
     const [listData, detailsData, speciesData, typesData] = await Promise.all([
       fetchJSON(DATA.list),
@@ -171,10 +169,9 @@ async function init() {
       typeSelect.appendChild(opt);
     });
 
-    statusBar.textContent = `${allPokemon.length.toLocaleString()} Pokémon · Haz clic en cualquiera para ver detalles`;
     applyFilters();
   } catch (e) {
-    statusBar.textContent = `Error cargando datos locales: ${e.message}`;
+    console.error('Error cargando datos locales:', e.message);
     console.error(e);
   }
 }
@@ -219,7 +216,6 @@ function applyFilters() {
   }
 
   emptyEl.style.display = filtered.length === 0 ? 'block' : 'none';
-  statusBar.textContent = `${filtered.length.toLocaleString()} Pokémon encontrados`;
 
   if (viewMode === 'table') {
     renderTable();
