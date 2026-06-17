@@ -19,13 +19,13 @@
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
         <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
       </svg>
-      <input type="text" id="search" placeholder="Buscar Pokémon por nombre..." autocomplete="off" />
+      <input type="text" id="search" placeholder="Search Pokémon by name..." autocomplete="off" />
     </div>
     <select id="type-filter">
-      <option value="">Todos los tipos</option>
+      <option value="">All types</option>
     </select>
     <select id="gen-filter">
-      <option value="">Todas las generaciones</option>
+      <option value="">All generations</option>
       <option value="1">Gen I (1–151)</option>
       <option value="2">Gen II (152–251)</option>
       <option value="3">Gen III (252–386)</option>
@@ -37,19 +37,19 @@
       <option value="9">Gen IX (906–1025)</option>
     </select>
     <select id="forms-filter">
-      <option value="">Todos</option>
-      <option value="base">Solo formas base</option>
-      <option value="forms">Solo megas y formas</option>
+      <option value="">All</option>
+      <option value="base">Base forms only</option>
+      <option value="forms">Megas &amp; forms only</option>
     </select>
     <select id="stat-sort">
-      <option value="">Ordenar por stat ↓</option>
+      <option value="">Sort by stat ↓</option>
       <option value="total">Total (BST)</option>
-      <option value="hp">PS (HP)</option>
-      <option value="attack">Ataque</option>
-      <option value="defense">Defensa</option>
-      <option value="special-attack">Atq. Especial</option>
-      <option value="special-defense">Def. Especial</option>
-      <option value="speed">Velocidad</option>
+      <option value="hp">HP</option>
+      <option value="attack">Attack</option>
+      <option value="defense">Defense</option>
+      <option value="special-attack">Sp. Atk</option>
+      <option value="special-defense">Sp. Def</option>
+      <option value="speed">Speed</option>
     </select>
   </div>
   <div class="top-right-ui">
@@ -88,7 +88,7 @@
     <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
       <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
     </svg>
-    <p>No se encontraron Pokémon</p>
+    <p>No Pokémon found</p>
   </div>
   <div id="sentinel">
     <div class="loader" id="loader" style="display:none"></div>
@@ -114,12 +114,12 @@
 
     <div class="modal-body">
       <div class="modal-section">
-        <div class="section-title">Habilidades</div>
+        <div class="section-title" id="section-abilities">Abilities</div>
         <div id="modal-abilities" class="modal-abilities"></div>
       </div>
 
       <div class="modal-section">
-        <div class="section-title">Estadísticas Base</div>
+        <div class="section-title" id="section-stats">Base Stats</div>
         <div id="modal-stats"></div>
         <div class="stat-total-row">
           <span class="stat-total-label">Total</span>
@@ -128,12 +128,12 @@
       </div>
 
       <div class="modal-section">
-        <div class="section-title">Efectividad de tipos (defensiva)</div>
+        <div class="section-title" id="section-def-eff">Type effectiveness (defensive)</div>
         <div id="modal-effectiveness"></div>
       </div>
 
       <div class="modal-section">
-        <div class="section-title">Efectividad de tipos (ofensiva)</div>
+        <div class="section-title" id="section-off-eff">Type effectiveness (offensive)</div>
         <div id="modal-offensive"></div>
       </div>
 

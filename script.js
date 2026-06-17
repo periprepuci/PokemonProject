@@ -124,6 +124,38 @@ function trimPokemon(d) {
   };
 }
 
+// ── I18N ──────────────────────────────────────────────────────
+const I18N = {
+  en: {
+    searchPlaceholder: 'Search Pokémon by name...',
+    allTypes: 'All types', allGens: 'All generations',
+    allForms: 'All', baseForms: 'Base forms only', megaForms: 'Megas & forms only',
+    sortByStat: 'Sort by stat ↓',
+    hp: 'HP', attack: 'Attack', defense: 'Defense',
+    specialAtk: 'Sp. Atk', specialDef: 'Sp. Def', speed: 'Speed',
+    statShort: { hp:'HP', attack:'Atk', defense:'Def', 'special-attack':'SpA', 'special-defense':'SpD', speed:'Spe' },
+    statFull:  { hp:'HP', attack:'Attack', defense:'Defense', 'special-attack':'Sp. Atk', 'special-defense':'Sp. Def', speed:'Speed' },
+    abilities: 'Abilities', baseStats: 'Base Stats',
+    defEff: 'Type effectiveness (defensive)', offEff: 'Type effectiveness (offensive)',
+    hiddenAbility: 'Hidden ability', noResults: 'No Pokémon found',
+    colName: 'Name', colType: 'Type',
+  },
+  es: {
+    searchPlaceholder: 'Buscar Pokémon por nombre...',
+    allTypes: 'Todos los tipos', allGens: 'Todas las generaciones',
+    allForms: 'Todos', baseForms: 'Solo formas base', megaForms: 'Solo megas y formas',
+    sortByStat: 'Ordenar por stat ↓',
+    hp: 'PS (HP)', attack: 'Ataque', defense: 'Defensa',
+    specialAtk: 'Atq. Especial', specialDef: 'Def. Especial', speed: 'Velocidad',
+    statShort: { hp:'PS', attack:'ATK', defense:'DEF', 'special-attack':'SpA', 'special-defense':'SpD', speed:'VEL' },
+    statFull:  { hp:'PS (HP)', attack:'Ataque', defense:'Defensa', 'special-attack':'Atq. Especial', 'special-defense':'Def. Especial', speed:'Velocidad' },
+    abilities: 'Habilidades', baseStats: 'Estadísticas Base',
+    defEff: 'Efectividad de tipos (defensiva)', offEff: 'Efectividad de tipos (ofensiva)',
+    hiddenAbility: 'Habilidad oculta', noResults: 'No se encontraron Pokémon',
+    colName: 'Nombre', colType: 'Tipo',
+  },
+};
+
 // ── LANGUAGE HELPERS ──────────────────────────────────────────
 function typeName(t) {
   return lang === 'es' ? (TYPE_NAMES_ES[t] || capitalize(t)) : capitalize(t);
@@ -137,6 +169,28 @@ function updateTypeDropdown() {
       ? (TYPE_NAMES_ES[opt.value] || capitalize(opt.value))
       : capitalize(opt.value);
   });
+}
+function updateUI() {
+  const t = I18N[lang];
+  searchEl.placeholder                  = t.searchPlaceholder;
+  typeSelect.options[0].textContent      = t.allTypes;
+  genSelect.options[0].textContent       = t.allGens;
+  formsFilterEl.options[0].textContent   = t.allForms;
+  formsFilterEl.options[1].textContent   = t.baseForms;
+  formsFilterEl.options[2].textContent   = t.megaForms;
+  statSortEl.options[0].textContent      = t.sortByStat;
+  statSortEl.options[2].textContent      = t.hp;
+  statSortEl.options[3].textContent      = t.attack;
+  statSortEl.options[4].textContent      = t.defense;
+  statSortEl.options[5].textContent      = t.specialAtk;
+  statSortEl.options[6].textContent      = t.specialDef;
+  statSortEl.options[7].textContent      = t.speed;
+  emptyEl.querySelector('p').textContent = t.noResults;
+  document.getElementById('section-abilities').textContent = t.abilities;
+  document.getElementById('section-stats').textContent     = t.baseStats;
+  document.getElementById('section-def-eff').textContent   = t.defEff;
+  document.getElementById('section-off-eff').textContent   = t.offEff;
+  updateTypeDropdown();
 }
 
 // ── FETCH ─────────────────────────────────────────────────────
@@ -199,6 +253,7 @@ async function init() {
       typeSelect.appendChild(opt);
     });
 
+    updateUI();
     applyFilters();
   } catch (e) {
     console.error('Error cargando datos locales:', e.message);
@@ -361,7 +416,7 @@ function buildCard(d) {
       const pill = document.createElement('span');
       pill.className = 'ability-pill' + (ab.is_hidden ? ' hidden' : '');
       pill.textContent = abilityName(ab.name);
-      if (ab.is_hidden) pill.title = 'Habilidad oculta';
+      if (ab.is_hidden) pill.title = I18N[lang].hiddenAbility;
       abilitiesEl.appendChild(pill);
     }
     card.appendChild(abilitiesEl);
@@ -369,13 +424,13 @@ function buildCard(d) {
 
   const statsEl = document.createElement('div');
   statsEl.className = 'stats';
-  for (const { key, label } of STAT_META) {
+  for (const { key } of STAT_META) {
     const val = statsMap[key] ?? 0;
     const pct = Math.min(100, (val / MAX_STAT) * 100).toFixed(1);
     const row = document.createElement('div');
     row.className = 'stat-row';
     row.innerHTML = `
-      <div class="stat-label">${label}</div>
+      <div class="stat-label">${I18N[lang].statShort[key]}</div>
       <div class="stat-bar-bg"><div class="stat-bar-fill" style="width:0%;background:${statBarColor(val)}" data-pct="${pct}"></div></div>
       <div class="stat-val" style="color:${statColor(val)}">${val}</div>`;
     statsEl.appendChild(row);
@@ -555,7 +610,7 @@ function updateModalContent(d) {
 
   // Abilities
   document.getElementById('modal-abilities').innerHTML = (d.abilities || [])
-    .map(ab => `<span class="ability-pill${ab.is_hidden ? ' hidden' : ''}"${ab.is_hidden ? ' title="Habilidad oculta"' : ''}>${abilityName(ab.name)}</span>`)
+    .map(ab => `<span class="ability-pill${ab.is_hidden ? ' hidden' : ''}"${ab.is_hidden ? ` title="${I18N[lang].hiddenAbility}"` : ''}>${abilityName(ab.name)}</span>`)
     .join('');
 
   // Stats
@@ -564,7 +619,8 @@ function updateModalContent(d) {
   for (const s of d.stats) statsMap[s.stat.name] = s.base_stat;
   for (const { key } of STAT_META) total += statsMap[key] ?? 0;
 
-  document.getElementById('modal-stats').innerHTML = STAT_META.map(({ key, fullLabel }) => {
+  document.getElementById('modal-stats').innerHTML = STAT_META.map(({ key }) => {
+    const fullLabel = I18N[lang].statFull[key];
     const val = statsMap[key] ?? 0;
     const pct = Math.min(100, (val / MAX_STAT) * 100).toFixed(1);
     return `<div class="modal-stat-row">
@@ -733,7 +789,7 @@ function renderTable() {
 
   const colDefs = [
     { key: 'total', label: 'Total' },
-    ...STAT_META.map(({ key, label }) => ({ key, label })),
+    ...STAT_META.map(({ key }) => ({ key, label: I18N[lang].statShort[key] })),
   ];
   const arrow = col =>
     tableSortCol !== col ? '↕' : tableSortDir === 1 ? '↓' : '↑';
@@ -742,8 +798,8 @@ function renderTable() {
   table.id = 'poke-table';
   table.innerHTML = `<thead><tr>
     <th>#</th>
-    <th>Nombre</th>
-    <th>Tipo</th>
+    <th>${I18N[lang].colName}</th>
+    <th>${I18N[lang].colType}</th>
     ${colDefs.map(c =>
       `<th class="th-stat sortable${tableSortCol === c.key ? ' sort-active' : ''}" data-col="${c.key}">${c.label}<span class="sort-arrow"> ${arrow(c.key)}</span></th>`
     ).join('')}
@@ -793,7 +849,7 @@ document.querySelectorAll('.lang-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     lang = btn.dataset.lang;
     document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
-    updateTypeDropdown();
+    updateUI();
     applyFilters();
     if (currentModalData && modalOverlay.classList.contains('open')) {
       updateModalContent(currentModalData);
