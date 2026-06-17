@@ -680,25 +680,29 @@ main {
 
 /* ── VIEW TOGGLE ── */
 .view-toggle {
+  position: fixed;
+  top: 18px;
+  right: 20px;
+  z-index: 200;
   display: flex;
   background: var(--bg3);
   border: 1px solid var(--border);
   border-radius: 10px;
   overflow: hidden;
-  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(0,0,0,.4);
 }
 .view-btn {
   background: none;
   border: none;
   color: var(--text2);
-  padding: 0 14px;
-  height: 42px;
+  padding: 0 13px;
+  height: 36px;
   cursor: pointer;
   display: flex;
   align-items: center;
   transition: background .15s, color .15s;
 }
-.view-btn svg { width: 17px; height: 17px; }
+.view-btn svg { width: 16px; height: 16px; }
 .view-btn.active { background: var(--accent); color: #fff; }
 .view-btn:hover:not(.active) { background: rgba(255,255,255,.07); color: var(--text); }
 
@@ -764,9 +768,7 @@ th.sort-active .sort-arrow { opacity: 1; }
   h1 { font-size: 22px; }
   .controls { flex-direction: column; }
   select { min-width: 100%; width: 100%; }
-  .view-toggle { width: 100%; }
-  .view-btn { flex: 1; justify-content: center; }
-  .modal-stat-row { grid-template-columns: 90px 1fr 40px; }
+.modal-stat-row { grid-template-columns: 90px 1fr 40px; }
   .modal-stat-label { font-size: 11px; }
   .modal-img { width: 140px; height: 140px; }
   .modal-name { font-size: 21px; }
