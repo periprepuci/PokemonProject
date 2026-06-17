@@ -4,7 +4,13 @@ import anthropic
 import os
 
 app = Flask(__name__)
-CORS(app)
+
+ALLOWED_ORIGINS = [
+    "https://periprepuci.github.io",
+    "http://localhost",        # para probar en local
+    "http://127.0.0.1",
+]
+CORS(app, origins=ALLOWED_ORIGINS)
 
 client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
 
