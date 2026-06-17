@@ -71,7 +71,8 @@ let typeMap       = new Map();
 let typeFilterVal = '';
 let genFilterVal  = '';
 let searchVal     = '';
-let statSortVal   = '';
+let statSortVal    = '';
+let formsFilterVal = '';
 
 // ── DOM REFS ──────────────────────────────────────────────────
 const grid         = document.getElementById('grid');
@@ -81,7 +82,8 @@ const loader       = document.getElementById('loader');
 const searchEl     = document.getElementById('search');
 const typeSelect   = document.getElementById('type-filter');
 const genSelect    = document.getElementById('gen-filter');
-const statSortEl   = document.getElementById('stat-sort');
+const formsFilterEl = document.getElementById('forms-filter');
+const statSortEl    = document.getElementById('stat-sort');
 const modalOverlay = document.getElementById('modal-overlay');
 const modalBox     = document.getElementById('modal-box');
 const modalClose   = document.getElementById('modal-close');
@@ -198,6 +200,8 @@ function applyFilters() {
       if (checkId < lo || checkId > hi) return false;
     }
     if (typeFilterVal && typeMap.has(typeFilterVal) && !typeMap.get(typeFilterVal).has(p.name)) return false;
+    if (formsFilterVal === 'base'  && p.id > 1025) return false;
+    if (formsFilterVal === 'forms' && p.id <= 1025) return false;
     return true;
   });
 
@@ -616,11 +620,13 @@ document.getElementById('logo').addEventListener('click', () => {
   searchEl.value    = '';
   typeSelect.value  = '';
   genSelect.value   = '';
-  statSortEl.value  = '';
-  searchVal         = '';
-  typeFilterVal     = '';
-  genFilterVal      = '';
-  statSortVal       = '';
+  statSortEl.value    = '';
+  formsFilterEl.value = '';
+  searchVal           = '';
+  typeFilterVal       = '';
+  genFilterVal        = '';
+  statSortVal         = '';
+  formsFilterVal      = '';
   window.scrollTo({ top: 0, behavior: 'smooth' });
   applyFilters();
 });
@@ -634,7 +640,8 @@ searchEl.addEventListener('input', () => {
 });
 typeSelect.addEventListener('change',  () => { typeFilterVal = typeSelect.value;  applyFilters(); });
 genSelect.addEventListener('change',   () => { genFilterVal  = genSelect.value;   applyFilters(); });
-statSortEl.addEventListener('change',  () => { statSortVal   = statSortEl.value;  applyFilters(); });
+formsFilterEl.addEventListener('change', () => { formsFilterVal = formsFilterEl.value; applyFilters(); });
+statSortEl.addEventListener('change',    () => { statSortVal    = statSortEl.value;    applyFilters(); });
 
 // ── INFINITE SCROLL ───────────────────────────────────────────
 const observer = new IntersectionObserver(
