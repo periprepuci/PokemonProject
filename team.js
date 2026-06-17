@@ -135,7 +135,11 @@ function attachAutocomplete(input, list) {
     matches.forEach(item => {
       const li = document.createElement('li');
       li.className = 'ac-option';
-      li.textContent = acLabel(item);
+      const primary   = acLabel(item);
+      const secondary = lang === 'en' ? item.es : item.en;
+      li.innerHTML = `<span class="ac-primary">${primary}</span>`
+        + (secondary && secondary !== primary
+            ? `<span class="ac-secondary"> / ${secondary}</span>` : '');
       li.addEventListener('mousedown', e => {
         e.preventDefault();
         input.value = acLabel(item);

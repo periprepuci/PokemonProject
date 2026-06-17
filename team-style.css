@@ -316,10 +316,12 @@
   text-overflow: ellipsis;
 }
 .ac-option:hover,
-.ac-option.active {
-  background: rgba(92,107,192,.22);
-  color: #8c9eff;
-}
+.ac-option.active { background: rgba(92,107,192,.22); }
+.ac-option:hover .ac-primary,
+.ac-option.active .ac-primary { color: #8c9eff; }
+
+.ac-primary { color: var(--text); font-weight: 600; }
+.ac-secondary { color: var(--text2); font-size: 11px; }
 
 /* ── RESPONSIVE ── */
 @media (max-width: 900px) {
