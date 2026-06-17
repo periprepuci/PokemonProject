@@ -1,5 +1,5 @@
 [build]
-buildCommand = "pip install -r backend/requirements.txt"
+builder = "nixpacks"
 
 [deploy]
 startCommand = "gunicorn --chdir backend main:app"
