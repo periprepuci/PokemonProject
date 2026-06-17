@@ -95,9 +95,10 @@ h1 {
 .controls {
   display: flex;
   gap: 10px;
-  max-width: 760px;
+  max-width: 1100px;
   margin: 0 auto;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
 }
 
 .search-wrap {
@@ -757,8 +758,8 @@ th.sort-active .sort-arrow { opacity: 1; }
 
 @media (max-width: 600px) {
   h1 { font-size: 22px; }
-  .controls { flex-direction: column; }
-  select { min-width: 100%; width: 100%; }
+  .controls { flex-wrap: wrap; }
+  select { min-width: 120px; }
 .modal-stat-row { grid-template-columns: 90px 1fr 40px; }
   .modal-stat-label { font-size: 11px; }
   .modal-img { width: 140px; height: 140px; }
