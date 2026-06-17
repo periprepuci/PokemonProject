@@ -185,7 +185,17 @@ function applyFilters() {
     if (q && !p.name.includes(q)) return false;
     if (genFilterVal) {
       const [lo, hi] = GEN_RANGES[genFilterVal];
-      if (p.id < lo || p.id > hi) return false;
+      let checkId = p.id;
+      if (p.id > 1025) {
+        // Alternate form (mega, regional, gmax…): use species ID of the base Pokémon
+        const detail = detailCache.get(p.url);
+        const sUrl = detail?.species?.url;
+        if (sUrl) {
+          const parts = sUrl.split('/').filter(Boolean);
+          checkId = parseInt(parts[parts.length - 1]);
+        }
+      }
+      if (checkId < lo || checkId > hi) return false;
     }
     if (typeFilterVal && typeMap.has(typeFilterVal) && !typeMap.get(typeFilterVal).has(p.name)) return false;
     return true;
