@@ -57,6 +57,10 @@ def trim_pokemon(d):
         'name':  d['name'],
         'types': [{'type': {'name': t['type']['name']}} for t in d['types']],
         'stats': [{'base_stat': s['base_stat'], 'stat': {'name': s['stat']['name']}} for s in d['stats']],
+        'abilities': [
+            {'name': a['ability']['name'], 'is_hidden': a['is_hidden']}
+            for a in d.get('abilities', [])
+        ],
         'species': {'url': d['species']['url']} if d.get('species') else None,
         'sprites': {
             'front_default': sprites.get('front_default'),
@@ -110,7 +114,7 @@ def main():
     # 2 -- Detalles
     detail_file = os.path.join(DATA_DIR, 'pokemon-details.json')
     details = load_json(detail_file) if os.path.exists(detail_file) else {}
-    missing = [p['url'] for p in all_pokemon if p['url'] not in details]
+    missing = [p['url'] for p in all_pokemon if p['url'] not in details or 'abilities' not in details[p['url']]]
 
     if missing:
         print('[2/4] Detalles: {} pendientes de {}...'.format(len(missing), len(all_pokemon)))

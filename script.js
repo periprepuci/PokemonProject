@@ -323,6 +323,20 @@ function buildCard(d) {
   }
   card.appendChild(typesEl);
 
+  const abilities = d.abilities || [];
+  if (abilities.length > 0) {
+    const abilitiesEl = document.createElement('div');
+    abilitiesEl.className = 'card-abilities';
+    for (const ab of abilities) {
+      const pill = document.createElement('span');
+      pill.className = 'ability-pill' + (ab.is_hidden ? ' hidden' : '');
+      pill.textContent = formatName(ab.name);
+      if (ab.is_hidden) pill.title = 'Habilidad oculta';
+      abilitiesEl.appendChild(pill);
+    }
+    card.appendChild(abilitiesEl);
+  }
+
   const statsEl = document.createElement('div');
   statsEl.className = 'stats';
   for (const { key, label } of STAT_META) {
