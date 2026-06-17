@@ -71,6 +71,7 @@ let typeMap       = new Map();
 let typeFilterVal = '';
 let genFilterVal  = '';
 let searchVal     = '';
+let statSortVal   = '';
 
 // ── DOM REFS ──────────────────────────────────────────────────
 const grid         = document.getElementById('grid');
@@ -80,6 +81,7 @@ const loader       = document.getElementById('loader');
 const searchEl     = document.getElementById('search');
 const typeSelect   = document.getElementById('type-filter');
 const genSelect    = document.getElementById('gen-filter');
+const statSortEl   = document.getElementById('stat-sort');
 const modalOverlay = document.getElementById('modal-overlay');
 const modalBox     = document.getElementById('modal-box');
 const modalClose   = document.getElementById('modal-close');
@@ -169,6 +171,13 @@ async function init() {
   }
 }
 
+// ── STAT SORT HELPER ──────────────────────────────────────────
+function getStatVal(d, key) {
+  if (!d) return 0;
+  if (key === 'total') return d.stats.reduce((s, x) => s + x.base_stat, 0);
+  return d.stats.find(s => s.stat.name === key)?.base_stat ?? 0;
+}
+
 // ── FILTERING ─────────────────────────────────────────────────
 function applyFilters() {
   const q = searchVal.toLowerCase().trim();
@@ -181,6 +190,13 @@ function applyFilters() {
     if (typeFilterVal && typeMap.has(typeFilterVal) && !typeMap.get(typeFilterVal).has(p.name)) return false;
     return true;
   });
+
+  if (statSortVal) {
+    filtered.sort((a, b) =>
+      getStatVal(detailCache.get(b.url), statSortVal) -
+      getStatVal(detailCache.get(a.url), statSortVal)
+    );
+  }
 
   page = 0;
   grid.innerHTML = '';
@@ -587,12 +603,14 @@ document.getElementById('modal-shiny-btn').addEventListener('click', () => {
 
 // ── LOGO RESET ────────────────────────────────────────────────
 document.getElementById('logo').addEventListener('click', () => {
-  searchEl.value   = '';
-  typeSelect.value = '';
-  genSelect.value  = '';
-  searchVal        = '';
-  typeFilterVal    = '';
-  genFilterVal     = '';
+  searchEl.value    = '';
+  typeSelect.value  = '';
+  genSelect.value   = '';
+  statSortEl.value  = '';
+  searchVal         = '';
+  typeFilterVal     = '';
+  genFilterVal      = '';
+  statSortVal       = '';
   window.scrollTo({ top: 0, behavior: 'smooth' });
   applyFilters();
 });
@@ -604,8 +622,9 @@ searchEl.addEventListener('input', () => {
   searchVal = searchEl.value;
   searchTimeout = setTimeout(applyFilters, 300);
 });
-typeSelect.addEventListener('change', () => { typeFilterVal = typeSelect.value; applyFilters(); });
-genSelect.addEventListener('change',  () => { genFilterVal  = genSelect.value;  applyFilters(); });
+typeSelect.addEventListener('change',  () => { typeFilterVal = typeSelect.value;  applyFilters(); });
+genSelect.addEventListener('change',   () => { genFilterVal  = genSelect.value;   applyFilters(); });
+statSortEl.addEventListener('change',  () => { statSortVal   = statSortEl.value;  applyFilters(); });
 
 // ── INFINITE SCROLL ───────────────────────────────────────────
 const observer = new IntersectionObserver(

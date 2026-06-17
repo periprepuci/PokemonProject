@@ -681,7 +681,7 @@ main {
 @media (max-width: 600px) {
   h1 { font-size: 22px; }
   .controls { flex-direction: column; }
-  select { min-width: 100%; }
+  select { min-width: 100%; width: 100%; }
   .modal-stat-row { grid-template-columns: 90px 1fr 40px; }
   .modal-stat-label { font-size: 11px; }
   .modal-img { width: 140px; height: 140px; }
