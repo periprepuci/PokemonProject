@@ -231,7 +231,7 @@
 
 .picker-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  grid-template-columns: repeat(auto-fill, 105px);
   gap: 8px;
   padding: 12px;
   overflow-y: auto;
