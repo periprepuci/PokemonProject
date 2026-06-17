@@ -1,0 +1,5 @@
+[build]
+buildCommand = "pip install -r backend/requirements.txt"
+
+[deploy]
+startCommand = "gunicorn --chdir backend main:app"
