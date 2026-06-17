@@ -102,7 +102,14 @@ function updateUI() {
 // ── AUTOCOMPLETE ─────────────────────────────────────────────
 function acLabel(item) { return item[lang] || item.en; }
 
-function attachAutocomplete(input, list) {
+// Resolves a stored slug → display name in current lang; raw text passes through
+function resolveValue(val, list) {
+  if (!val) return '';
+  const found = list.find(x => x.slug === val);
+  return found ? acLabel(found) : val;
+}
+
+function attachAutocomplete(input, list, onSelect) {
   let dropdown = null;
   let activeIdx = -1;
 
@@ -143,7 +150,7 @@ function attachAutocomplete(input, list) {
       li.addEventListener('mousedown', e => {
         e.preventDefault();
         input.value = acLabel(item);
-        input.dispatchEvent(new Event('input', {bubbles:true}));
+        onSelect(item);
         close();
       });
       dropdown.appendChild(li);
@@ -255,12 +262,12 @@ function renderFilled(i) {
   itemInput.type = 'text';
   itemInput.className = 'slot-item';
   itemInput.placeholder = t.itemPlaceholder;
-  itemInput.value = slot.item;
+  itemInput.value = resolveValue(slot.item, itemsList) || slot.item;
   itemInput.addEventListener('input', e => { team[i].item = e.target.value; });
   itemWrap.appendChild(itemInput);
   itemGroup.appendChild(itemWrap);
   inputs.appendChild(itemGroup);
-  if (itemsList.length) attachAutocomplete(itemInput, itemsList);
+  if (itemsList.length) attachAutocomplete(itemInput, itemsList, item => { team[i].item = item.slug; });
 
   // Moves
   const movesGroup = document.createElement('div');
@@ -273,11 +280,11 @@ function renderFilled(i) {
     mv.type = 'text';
     mv.className = 'slot-move';
     mv.placeholder = t.move(m + 1);
-    mv.value = slot.moves[m];
+    mv.value = resolveValue(slot.moves[m], movesList) || slot.moves[m];
     mv.addEventListener('input', e => { team[i].moves[m] = e.target.value; });
     wrap.appendChild(mv);
     movesGroup.appendChild(wrap);
-    if (movesList.length) attachAutocomplete(mv, movesList);
+    if (movesList.length) attachAutocomplete(mv, movesList, item => { team[i].moves[m] = item.slug; });
   });
   inputs.appendChild(movesGroup);
   card.appendChild(inputs);
