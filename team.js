@@ -1,0 +1,318 @@
+'use strict';
+
+const BACKEND_URL = 'https://pokemonproject-vwu0.onrender.com';
+
+const TYPE_COLORS = {
+  normal:'#9199a1', fire:'#ff6f30',   water:'#4e8eff',  electric:'#f5c518',
+  grass:'#3bc86a',  ice:'#74cec0',    fighting:'#ce4069',poison:'#a95fc6',
+  ground:'#d67c32', flying:'#89aae3', psychic:'#f35282', bug:'#90c12c',
+  rock:'#c5b78c',   ghost:'#5269ac',  dragon:'#0b6dc3',  dark:'#595761',
+  steel:'#5a8ea1',  fairy:'#ec8fe6',
+};
+
+const TYPE_NAMES_ES = {
+  normal:'Normal', fire:'Fuego', water:'Agua', electric:'Eléctrico',
+  grass:'Planta', ice:'Hielo', fighting:'Lucha', poison:'Veneno',
+  ground:'Tierra', flying:'Volador', psychic:'Psíquico', bug:'Bicho',
+  rock:'Roca', ghost:'Fantasma', dragon:'Dragón', dark:'Siniestro',
+  steel:'Acero', fairy:'Hada',
+};
+
+const I18N = {
+  en: {
+    pageTitle: 'Team Builder',
+    back: '← Pokédex',
+    addPokemon: 'Add Pokémon',
+    item: 'Held item',
+    moves: 'Moves',
+    analyze: '⚡ Analyze Team',
+    analyzing: 'Analyzing…',
+    analysisTitle: 'Team Analysis',
+    searchPlaceholder: 'Search Pokémon…',
+    remove: 'Remove',
+    noResults: 'No Pokémon found',
+    itemPlaceholder: 'e.g. Choice Specs',
+    move: n => `Move ${n}`,
+    clickToChange: 'Click to change',
+  },
+  es: {
+    pageTitle: 'Team Builder',
+    back: '← Pokédex',
+    addPokemon: 'Añadir Pokémon',
+    item: 'Objeto',
+    moves: 'Movimientos',
+    analyze: '⚡ Analizar Equipo',
+    analyzing: 'Analizando…',
+    analysisTitle: 'Análisis del Equipo',
+    searchPlaceholder: 'Buscar Pokémon…',
+    remove: 'Quitar',
+    noResults: 'No se encontraron Pokémon',
+    itemPlaceholder: 'ej. Gafas Elegidas',
+    move: n => `Movimiento ${n}`,
+    clickToChange: 'Click para cambiar',
+  },
+};
+
+// ── STATE ────────────────────────────────────────────────────
+let lang       = 'en';
+let allPokemon = [];
+let detailCache = new Map();
+let team = Array.from({length: 6}, () => ({ pokemon: null, item: '', moves: ['','','',''] }));
+let pickerSlot = -1;
+
+// ── DOM ───────────────────────────────────────────────────────
+const teamGrid       = document.getElementById('team-grid');
+const btnAnalyze     = document.getElementById('btn-analyze');
+const pickerOverlay  = document.getElementById('picker-overlay');
+const pickerCloseBtn = document.getElementById('picker-close');
+const pickerSearchEl = document.getElementById('picker-search');
+const pickerGridEl   = document.getElementById('picker-grid');
+const analysisOverlay  = document.getElementById('analysis-overlay');
+const analysisCloseBtn = document.getElementById('analysis-close');
+const analysisTitleEl  = document.getElementById('analysis-title');
+const analysisContent  = document.getElementById('analysis-content');
+
+// ── HELPERS ───────────────────────────────────────────────────
+function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+function formatName(n) { return n.split('-').map(capitalize).join(' '); }
+function typeName(t)   { return lang === 'es' ? (TYPE_NAMES_ES[t] || capitalize(t)) : capitalize(t); }
+function spriteUrl(id) {
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
+}
+function baseId(d) {
+  if (!d || d.id <= 1025) return d?.id ?? 0;
+  const parts = (d.species?.url || '').split('/').filter(Boolean);
+  return parts.length ? parseInt(parts[parts.length - 1]) : d.id;
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+async function init() {
+  const [listData, detailsData] = await Promise.all([
+    fetch('./data/pokemon-list.json').then(r => r.json()),
+    fetch('./data/pokemon-details.json').then(r => r.json()),
+  ]);
+  allPokemon = listData;
+  for (const [url, d] of Object.entries(detailsData)) detailCache.set(url, d);
+  updateUI();
+  renderSlots();
+}
+
+// ── I18N ──────────────────────────────────────────────────────
+function updateUI() {
+  const t = I18N[lang];
+  document.getElementById('page-title').textContent = t.pageTitle;
+  document.getElementById('back-link').textContent  = t.back;
+  btnAnalyze.textContent  = t.analyze;
+  pickerSearchEl.placeholder = t.searchPlaceholder;
+  renderSlots();
+}
+
+// ── RENDER SLOTS ──────────────────────────────────────────────
+function renderSlots() {
+  teamGrid.innerHTML = '';
+  team.forEach((slot, i) => {
+    teamGrid.appendChild(slot.pokemon ? renderFilled(i) : renderEmpty(i));
+  });
+  btnAnalyze.disabled = !team.some(s => s.pokemon);
+}
+
+function renderEmpty(i) {
+  const t = I18N[lang];
+  const card = document.createElement('div');
+  card.className = 'team-card empty';
+  card.innerHTML = `
+    <button class="add-slot-btn">
+      <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 5v14M5 12h14"/>
+      </svg>
+      <span>${t.addPokemon}</span>
+    </button>`;
+  card.addEventListener('click', () => openPicker(i));
+  return card;
+}
+
+function renderFilled(i) {
+  const t    = I18N[lang];
+  const slot = team[i];
+  const d    = slot.pokemon;
+  const types = d.types.map(x => x.type.name);
+  const sprite = d.sprites?.other?.['official-artwork']?.front_default
+              || d.sprites?.other?.home?.front_default
+              || d.sprites?.front_default || '';
+  const mainColor = TYPE_COLORS[types[0]] || '#555';
+
+  const card = document.createElement('div');
+  card.className = 'team-card filled';
+
+  const bg = document.createElement('div');
+  bg.className = 'card-top-bg';
+  bg.style.background = `radial-gradient(circle at 65% 15%, ${mainColor}44 0%, transparent 68%)`;
+  card.appendChild(bg);
+
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 'remove-slot-btn';
+  removeBtn.title = t.remove;
+  removeBtn.textContent = '✕';
+  removeBtn.addEventListener('click', e => { e.stopPropagation(); clearSlot(i); });
+  card.appendChild(removeBtn);
+
+  // Header (click to change Pokémon)
+  const header = document.createElement('div');
+  header.className = 'slot-header';
+  header.title = t.clickToChange;
+  header.innerHTML = `
+    ${sprite ? `<img src="${sprite}" alt="${d.name}" class="slot-img">` : ''}
+    <div class="slot-info">
+      <div class="slot-num">#${String(baseId(d)).padStart(4,'0')}</div>
+      <div class="slot-name">${formatName(d.name)}</div>
+      <div class="slot-types">${types.map(tp => `<span class="type-badge t-${tp}">${typeName(tp)}</span>`).join('')}</div>
+    </div>`;
+  header.addEventListener('click', () => openPicker(i));
+  card.appendChild(header);
+
+  // Item + moves inputs
+  const inputs = document.createElement('div');
+  inputs.className = 'slot-inputs';
+
+  const itemGroup = document.createElement('div');
+  itemGroup.className = 'input-group';
+  itemGroup.innerHTML = `<label>${t.item}</label>`;
+  const itemInput = document.createElement('input');
+  itemInput.type = 'text';
+  itemInput.className = 'slot-item';
+  itemInput.placeholder = t.itemPlaceholder;
+  itemInput.value = slot.item;
+  itemInput.addEventListener('input', e => { team[i].item = e.target.value; });
+  itemGroup.appendChild(itemInput);
+  inputs.appendChild(itemGroup);
+
+  const movesGroup = document.createElement('div');
+  movesGroup.className = 'input-group';
+  movesGroup.innerHTML = `<label>${t.moves}</label>`;
+  [0,1,2,3].forEach(m => {
+    const mv = document.createElement('input');
+    mv.type = 'text';
+    mv.className = 'slot-move';
+    mv.placeholder = t.move(m + 1);
+    mv.value = slot.moves[m];
+    mv.addEventListener('input', e => { team[i].moves[m] = e.target.value; });
+    movesGroup.appendChild(mv);
+  });
+  inputs.appendChild(movesGroup);
+  card.appendChild(inputs);
+
+  return card;
+}
+
+function clearSlot(i) {
+  team[i] = { pokemon: null, item: '', moves: ['','','',''] };
+  renderSlots();
+}
+
+// ── PICKER ────────────────────────────────────────────────────
+function openPicker(slotIndex) {
+  pickerSlot = slotIndex;
+  pickerSearchEl.value = '';
+  renderPickerGrid('');
+  pickerOverlay.classList.add('open');
+  setTimeout(() => pickerSearchEl.focus(), 50);
+}
+
+function closePicker() {
+  pickerOverlay.classList.remove('open');
+  pickerSlot = -1;
+}
+
+function renderPickerGrid(search) {
+  const q = search.toLowerCase().trim();
+  const results = allPokemon.filter(p => !q || p.name.includes(q)).slice(0, 100);
+  const frag = document.createDocumentFragment();
+
+  if (results.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'picker-empty';
+    empty.textContent = I18N[lang].noResults;
+    frag.appendChild(empty);
+  } else {
+    for (const p of results) {
+      const d = detailCache.get(p.url);
+      const types = d?.types.map(x => x.type.name) || [];
+      const el = document.createElement('div');
+      el.className = 'picker-item';
+      el.innerHTML = `
+        <img src="${spriteUrl(p.id)}" alt="${p.name}" loading="lazy" onerror="this.style.display='none'">
+        <div class="picker-item-num">#${String(p.id).padStart(4,'0')}</div>
+        <div class="picker-item-name">${formatName(p.name)}</div>
+        <div class="picker-item-types">${types.map(tp => `<span class="type-badge t-${tp} sm">${typeName(tp)}</span>`).join('')}</div>`;
+      el.addEventListener('click', () => {
+        if (d) {
+          team[pickerSlot].pokemon = d;
+          renderSlots();
+        }
+        closePicker();
+      });
+      frag.appendChild(el);
+    }
+  }
+  pickerGridEl.innerHTML = '';
+  pickerGridEl.appendChild(frag);
+}
+
+// ── ANALYZE ───────────────────────────────────────────────────
+async function analyzeTeam() {
+  const filled = team.filter(s => s.pokemon);
+  if (filled.length === 0) return;
+
+  const t = I18N[lang];
+  analysisTitleEl.textContent = t.analysisTitle;
+  analysisContent.innerHTML = `<div class="analysis-loading">${t.analyzing}</div>`;
+  analysisOverlay.classList.add('open');
+
+  const teamData = filled.map(s => ({
+    name:      s.pokemon.name,
+    types:     s.pokemon.types,
+    stats:     s.pokemon.stats,
+    abilities: (s.pokemon.abilities || []).map(ab => ({ name: ab.name, is_hidden: ab.is_hidden })),
+    item:      s.item,
+    moves:     s.moves,
+  }));
+
+  try {
+    const resp = await fetch(`${BACKEND_URL}/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ team: teamData, lang }),
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    analysisContent.innerHTML = data.analysis
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n/g, '<br>');
+  } catch (e) {
+    analysisContent.innerHTML = `<div class="analysis-loading" style="color:#ff6b6b">Error: ${e.message}</div>`;
+  }
+}
+
+// ── EVENTS ────────────────────────────────────────────────────
+btnAnalyze.addEventListener('click', analyzeTeam);
+
+pickerCloseBtn.addEventListener('click', closePicker);
+pickerOverlay.addEventListener('click', e => { if (e.target === pickerOverlay) closePicker(); });
+pickerSearchEl.addEventListener('input', e => renderPickerGrid(e.target.value));
+
+analysisCloseBtn.addEventListener('click', () => analysisOverlay.classList.remove('open'));
+analysisOverlay.addEventListener('click', e => { if (e.target === analysisOverlay) analysisOverlay.classList.remove('open'); });
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closePicker(); analysisOverlay.classList.remove('open'); }
+});
+
+document.querySelectorAll('.lang-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    lang = btn.dataset.lang;
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+    updateUI();
+  });
+});
+
+init();

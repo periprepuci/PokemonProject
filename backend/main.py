@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 ALLOWED_ORIGINS = [
     "https://periprepuci.github.io",
-    "http://localhost",        # para probar en local
+    "http://localhost",
     "http://127.0.0.1",
 ]
 CORS(app, origins=ALLOWED_ORIGINS)
@@ -31,7 +31,7 @@ def analyze():
 
     message = client.messages.create(
         model="claude-haiku-4-5-20251001",
-        max_tokens=512,
+        max_tokens=700,
         system=system_msg,
         messages=[{"role": "user", "content": prompt}],
     )
@@ -42,18 +42,27 @@ def analyze():
 def build_prompt(team, lang):
     lines = []
     for p in team:
+        name   = p["name"].replace("-", " ").title()
         types  = "/".join(t["type"]["name"] for t in p.get("types", []))
         stats  = {s["stat"]["name"]: s["base_stat"] for s in p.get("stats", [])}
         abs_   = [a["name"] for a in p.get("abilities", []) if not a.get("is_hidden")]
         hidden = next((a["name"] for a in p.get("abilities", []) if a.get("is_hidden")), None)
+        item   = p.get("item", "").strip()
+        moves  = [m.strip() for m in p.get("moves", []) if str(m).strip()]
+
         stat_s = (f"HP {stats.get('hp',0)} / Atk {stats.get('attack',0)} / "
                   f"Def {stats.get('defense',0)} / SpA {stats.get('special-attack',0)} / "
                   f"SpD {stats.get('special-defense',0)} / Spe {stats.get('speed',0)}")
-        line = f"- {p['name'].replace('-',' ').title()} [{types}] {stat_s}"
+
+        line = f"- {name} [{types}] {stat_s}"
         if abs_:
-            line += f" | {', '.join(abs_)}"
+            line += f" | Abilities: {', '.join(abs_)}"
         if hidden:
             line += f" (HA: {hidden})"
+        if item:
+            line += f" | Item: {item}"
+        if moves:
+            line += f" | Moves: {', '.join(moves)}"
         lines.append(line)
 
     team_str = "\n".join(lines)
@@ -61,19 +70,23 @@ def build_prompt(team, lang):
     if lang == "es":
         return (
             "Eres un experto en Pokémon competitivo. Responde siempre en español, de forma concisa y directa.",
-            f"Analiza este equipo (máximo 220 palabras):\n{team_str}\n\n"
-            "Responde con estas tres secciones:\n"
-            "**Fortalezas** — qué hace bien el equipo\n"
-            "**Debilidades** — tipos o estrategias que lo amenazan\n"
-            "**Consejo** — 1-2 mejoras concretas",
+            f"Analiza este equipo competitivo (máximo 350 palabras):\n\n{team_str}\n\n"
+            "Responde con estas cinco secciones:\n"
+            "**Cobertura ofensiva** — qué tipos cubren bien los movimientos del equipo\n"
+            "**Debilidades del equipo** — tipos o estrategias que más amenazan al equipo\n"
+            "**Sinergia de objetos** — si los objetos elegidos encajan con cada Pokémon\n"
+            "**Sugerencias de movimientos** — movimientos obvios que mejorarían el equipo\n"
+            "**Consejo final** — 1-2 mejoras concretas para fortalecer el equipo",
         )
     return (
         "You are a competitive Pokémon expert. Be concise and practical.",
-        f"Analyze this team (max 220 words):\n{team_str}\n\n"
-        "Reply with these three sections:\n"
-        "**Strengths** — what the team does well\n"
-        "**Weaknesses** — types or strategies that threaten it\n"
-        "**Tip** — 1-2 concrete improvements",
+        f"Analyze this competitive Pokémon team (max 350 words):\n\n{team_str}\n\n"
+        "Reply with exactly these five sections:\n"
+        "**Offensive Coverage** — what types the team's moves cover well\n"
+        "**Team Weaknesses** — types or strategies that most threaten the team\n"
+        "**Item Synergy** — whether each item fits its Pokémon and the team\n"
+        "**Move Suggestions** — obvious moves that would improve the team\n"
+        "**Final Tip** — 1-2 concrete improvements to strengthen the team",
     )
 
 
