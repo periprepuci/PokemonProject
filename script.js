@@ -291,9 +291,9 @@ function getStatVal(d, key) {
 
 // ── FILTERING ─────────────────────────────────────────────────
 function applyFilters() {
-  const q = searchVal.toLowerCase().trim();
+  const q = normalize(searchVal);
   filtered = allPokemon.filter(p => {
-    if (q && !p.name.includes(q)) return false;
+    if (q && !normalize(p.name).includes(q)) return false;
     if (genFilterVal) {
       const [lo, hi] = GEN_RANGES[genFilterVal];
       let checkId = p.id;
@@ -907,6 +907,7 @@ observer.observe(document.getElementById('sentinel'));
 // ── HELPERS ───────────────────────────────────────────────────
 function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 function formatName(n) { return n.split('-').map(capitalize).join(' '); }
+function normalize(s)  { return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
 function baseId(d) {
   if (!d || d.id <= 1025) return d?.id ?? 0;
   const parts = (d.species?.url || '').split('/').filter(Boolean);

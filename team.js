@@ -65,6 +65,7 @@ const analysisContent  = document.getElementById('analysis-content');
 const capitalize = s => s.charAt(0).toUpperCase() + s.slice(1);
 const formatName = n => n.split('-').map(capitalize).join(' ');
 const typeName   = t => lang === 'es' ? (TYPE_NAMES_ES[t] || capitalize(t)) : capitalize(t);
+const normalize  = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const spriteUrl  = id =>
   `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
 function baseId(d) {
@@ -125,11 +126,11 @@ function attachAutocomplete(input, list, onSelect) {
   function open(q) {
     close();
     if (!q) return;
-    const ql = q.toLowerCase();
+    const ql = normalize(q);
 
     const matches = list
       .filter(x => {
-        const en = x.en.toLowerCase(), es = (x.es||'').toLowerCase();
+        const en = normalize(x.en), es = normalize(x.es||'');
         return en.includes(ql) || es.includes(ql);
       })
       .sort((a, b) => {
@@ -346,8 +347,8 @@ function closePicker() {
 }
 
 function renderPickerGrid(search) {
-  const q = search.toLowerCase().trim();
-  const results = allPokemon.filter(p => !q || p.name.includes(q)).slice(0, 100);
+  const q = normalize(search);
+  const results = allPokemon.filter(p => !q || normalize(p.name).includes(q)).slice(0, 100);
   const frag = document.createDocumentFragment();
 
   if (!results.length) {
