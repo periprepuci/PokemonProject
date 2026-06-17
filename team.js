@@ -156,7 +156,12 @@ function attachAutocomplete(input, list, onSelect) {
       dropdown.appendChild(li);
     });
 
-    input.closest('.ac-wrap').appendChild(dropdown);
+    // Render in body to escape overflow:hidden on the card
+    const rect = input.getBoundingClientRect();
+    dropdown.style.top   = (rect.bottom + window.scrollY) + 'px';
+    dropdown.style.left  = (rect.left   + window.scrollX) + 'px';
+    dropdown.style.width = rect.width + 'px';
+    document.body.appendChild(dropdown);
   }
 
   input.addEventListener('input',  e => open(e.target.value));

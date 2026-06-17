@@ -289,8 +289,6 @@
 
 .ac-dropdown {
   position: absolute;
-  top: 100%;
-  left: 0; right: 0;
   background: #12152a;
   border: 1px solid var(--accent);
   border-top: none;
