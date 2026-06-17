@@ -54,10 +54,11 @@ const GEN_RANGES = {
 
 // ── DATA PATHS ────────────────────────────────────────────────
 const DATA = {
-  list:    './data/pokemon-list.json',
-  details: './data/pokemon-details.json',
-  species: './data/species.json',
-  types:   './data/types.json',
+  list:      './data/pokemon-list.json',
+  details:   './data/pokemon-details.json',
+  species:   './data/species.json',
+  types:     './data/types.json',
+  abilities: './data/abilities.json',
 };
 
 // ── STATE ─────────────────────────────────────────────────────
@@ -68,6 +69,7 @@ let isLoading     = false;
 let detailCache   = new Map();
 let speciesCache  = new Map();
 let typeMap       = new Map();
+let abilityNames  = new Map();
 let typeFilterVal = '';
 let genFilterVal  = '';
 let searchVal     = '';
@@ -137,11 +139,12 @@ async function getPokemonDetail(url) {
 // ── INIT ──────────────────────────────────────────────────────
 async function init() {
   try {
-    const [listData, detailsData, speciesData, typesData] = await Promise.all([
+    const [listData, detailsData, speciesData, typesData, abilitiesData] = await Promise.all([
       fetchJSON(DATA.list),
       fetchJSON(DATA.details),
       fetchJSON(DATA.species),
       fetchJSON(DATA.types),
+      fetchJSON(DATA.abilities).catch(() => ({})),
     ]);
 
     allPokemon = listData;
@@ -151,6 +154,8 @@ async function init() {
       detailCache.set(url, detail);
     for (const [url, sp] of Object.entries(speciesData))
       speciesCache.set(url, sp);
+    for (const [eng, es] of Object.entries(abilitiesData))
+      abilityNames.set(eng, es);
 
     // Construir typeMap desde los detalles ya cargados (sin llamadas extra a la API)
     for (const detail of detailCache.values()) {
@@ -330,7 +335,7 @@ function buildCard(d) {
     for (const ab of abilities) {
       const pill = document.createElement('span');
       pill.className = 'ability-pill' + (ab.is_hidden ? ' hidden' : '');
-      pill.textContent = formatName(ab.name);
+      pill.textContent = abilityNames.get(ab.name) || formatName(ab.name);
       if (ab.is_hidden) pill.title = 'Habilidad oculta';
       abilitiesEl.appendChild(pill);
     }
@@ -522,6 +527,11 @@ function updateModalContent(d) {
   document.getElementById('modal-name').textContent = formatName(d.name);
   document.getElementById('modal-types').innerHTML  =
     types.map(t => `<span class="type-badge t-${t}">${capitalize(t)}</span>`).join('');
+
+  // Abilities
+  document.getElementById('modal-abilities').innerHTML = (d.abilities || [])
+    .map(ab => `<span class="ability-pill${ab.is_hidden ? ' hidden' : ''}"${ab.is_hidden ? ' title="Habilidad oculta"' : ''}>${abilityNames.get(ab.name) || formatName(ab.name)}</span>`)
+    .join('');
 
   // Stats
   const statsMap = {};

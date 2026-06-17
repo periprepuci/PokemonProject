@@ -162,12 +162,46 @@ def main():
     # 4 -- Tipos
     types_file = os.path.join(DATA_DIR, 'types.json')
     if not os.path.exists(types_file):
-        print('[4/4] Descargando tipos...')
+        print('[4/5] Descargando tipos...')
         data = fetch_json('https://pokeapi.co/api/v2/type?limit=100')
         save_json(types_file, data['results'])
         print('     OK {} tipos  ({:.0f} KB)'.format(len(data['results']), kb(types_file)))
     else:
-        print('[4/4] Tipos: ya descargados  ({:.0f} KB)'.format(kb(types_file)))
+        print('[4/5] Tipos: ya descargados  ({:.0f} KB)'.format(kb(types_file)))
+
+    # 5 -- Habilidades (nombres en español)
+    abilities_file = os.path.join(DATA_DIR, 'abilities.json')
+    abilities_map  = load_json(abilities_file) if os.path.exists(abilities_file) else {}
+
+    all_ab_names = set()
+    for d in details.values():
+        for a in d.get('abilities', []):
+            all_ab_names.add(a['name'])
+    missing_ab = [n for n in all_ab_names if n not in abilities_map]
+
+    def extract_es_name(d):
+        for n in d.get('names', []):
+            if n['language']['name'] == 'es':
+                return n['name']
+        return d.get('name', '')
+
+    if missing_ab:
+        print('[5/5] Habilidades: {} pendientes de {}...'.format(len(missing_ab), len(all_ab_names)))
+        ab_url_map = {'https://pokeapi.co/api/v2/ability/{}/'.format(n): n for n in missing_ab}
+        done = 0
+        for i in range(0, len(missing_ab), BATCH_SIZE):
+            batch = list(ab_url_map.keys())[i:i + BATCH_SIZE]
+            results, _ = fetch_concurrent(batch, transform=extract_es_name)
+            for url, es_name in results.items():
+                abilities_map[ab_url_map[url]] = es_name
+                done += 1
+            sys.stdout.write('\r  {} / {}'.format(done, len(missing_ab)))
+            sys.stdout.flush()
+            save_json(abilities_file, abilities_map)
+            time.sleep(DELAY)
+        print('\n     OK {} habilidades  ({:.0f} KB)'.format(done, kb(abilities_file)))
+    else:
+        print('[5/5] Habilidades: {} ya descargadas  ({:.0f} KB)'.format(len(abilities_map), kb(abilities_file)))
 
     elapsed = time.time() - t0
     total_kb = sum(kb(os.path.join(DATA_DIR, f)) for f in os.listdir(DATA_DIR) if f.endswith('.json'))

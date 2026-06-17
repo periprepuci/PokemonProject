@@ -253,6 +253,18 @@ main {
   box-shadow: 0 2px 6px rgba(0,0,0,.3);
 }
 
+/* ── MODAL ABILITIES ── */
+.modal-abilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.modal-abilities .ability-pill {
+  font-size: 12px;
+  padding: 5px 13px;
+  border-radius: 12px;
+}
+
 /* ── CARD ABILITIES ── */
 .card-abilities {
   display: flex;
