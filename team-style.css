@@ -226,6 +226,7 @@
   color: var(--text);
   font-size: 14px;
   outline: none;
+  padding-right: 40px;
 }
 .picker-search-wrap input::placeholder { color: var(--text2); }
 
@@ -237,6 +238,7 @@
   overflow-y: auto;
   flex: 1;
   align-content: start;
+  justify-content: center;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
 }
