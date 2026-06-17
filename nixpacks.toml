@@ -1,0 +1,8 @@
+[phases.setup]
+nixPkgs = ["python311"]
+
+[phases.install]
+cmds = ["python3 -m pip install -r backend/requirements.txt"]
+
+[start]
+cmd = "gunicorn --chdir backend main:app"
