@@ -22,6 +22,14 @@ const TYPE_CHART = {
   fairy:    { fire:0.5, poison:0.5, steel:0.5, fighting:2, dragon:2, dark:2 },
 };
 
+const TYPE_NAMES_ES = {
+  normal:'Normal', fire:'Fuego', water:'Agua', electric:'Eléctrico',
+  grass:'Planta', ice:'Hielo', fighting:'Lucha', poison:'Veneno',
+  ground:'Tierra', flying:'Volador', psychic:'Psíquico', bug:'Bicho',
+  rock:'Roca', ghost:'Fantasma', dragon:'Dragón', dark:'Siniestro',
+  steel:'Acero', fairy:'Hada', unknown:'Desconocido', shadow:'Sombra',
+};
+
 const ALL_TYPES = [
   'normal','fire','water','electric','grass','ice','fighting','poison',
   'ground','flying','psychic','bug','rock','ghost','dragon','dark','steel','fairy',
@@ -75,9 +83,11 @@ let genFilterVal  = '';
 let searchVal     = '';
 let statSortVal    = '';
 let formsFilterVal = '';
-let viewMode       = 'grid';
-let tableSortCol   = '';
-let tableSortDir   = 1; // 1 = desc, -1 = asc
+let viewMode        = 'grid';
+let tableSortCol    = '';
+let tableSortDir    = 1;
+let lang            = 'es';
+let currentModalData = null;
 
 // ── DOM REFS ──────────────────────────────────────────────────
 const grid         = document.getElementById('grid');
@@ -112,6 +122,21 @@ function trimPokemon(d) {
       },
     },
   };
+}
+
+// ── LANGUAGE HELPERS ──────────────────────────────────────────
+function typeName(t) {
+  return lang === 'es' ? (TYPE_NAMES_ES[t] || capitalize(t)) : capitalize(t);
+}
+function abilityName(eng) {
+  return lang === 'es' ? (abilityNames.get(eng) || formatName(eng)) : formatName(eng);
+}
+function updateTypeDropdown() {
+  typeSelect.querySelectorAll('option').forEach(opt => {
+    if (opt.value) opt.textContent = lang === 'es'
+      ? (TYPE_NAMES_ES[opt.value] || capitalize(opt.value))
+      : capitalize(opt.value);
+  });
 }
 
 // ── FETCH ─────────────────────────────────────────────────────
@@ -170,7 +195,7 @@ async function init() {
     [...typesData.map(t => t.name)].sort().forEach(name => {
       const opt = document.createElement('option');
       opt.value = name;
-      opt.textContent = capitalize(name);
+      opt.textContent = typeName(name);
       typeSelect.appendChild(opt);
     });
 
@@ -323,7 +348,7 @@ function buildCard(d) {
   for (const t of types) {
     const b = document.createElement('span');
     b.className = `type-badge t-${t}`;
-    b.textContent = capitalize(t);
+    b.textContent = typeName(t);
     typesEl.appendChild(b);
   }
   card.appendChild(typesEl);
@@ -335,7 +360,7 @@ function buildCard(d) {
     for (const ab of abilities) {
       const pill = document.createElement('span');
       pill.className = 'ability-pill' + (ab.is_hidden ? ' hidden' : '');
-      pill.textContent = abilityNames.get(ab.name) || formatName(ab.name);
+      pill.textContent = abilityName(ab.name);
       if (ab.is_hidden) pill.title = 'Habilidad oculta';
       abilitiesEl.appendChild(pill);
     }
@@ -448,7 +473,7 @@ function calculateOffensive(atkTypes) {
 function effRowHTML(label, cls, title, types) {
   const badges = types.length === 0
     ? '<span class="eff-none">—</span>'
-    : types.map(t => `<span class="eff-badge t-${t}">${capitalize(t)}</span>`).join('');
+    : types.map(t => `<span class="eff-badge t-${t}">${typeName(t)}</span>`).join('');
   return `<div class="eff-group">
     <div class="eff-mult ${cls}" title="${title}">${label}</div>
     <div class="eff-badges">${badges}</div>
@@ -478,7 +503,7 @@ function buildOffHTML(eff) {
 
 // ── MODAL ─────────────────────────────────────────────────────
 function openModal(d) {
-  // Reset form selector while species loads
+  currentModalData = d;
   const formsEl = document.getElementById('modal-forms');
   formsEl.innerHTML = '';
   formsEl.style.display = 'none';
@@ -526,11 +551,11 @@ function updateModalContent(d) {
   document.getElementById('modal-num').textContent  = `#${String(d.id).padStart(4, '0')}`;
   document.getElementById('modal-name').textContent = formatName(d.name);
   document.getElementById('modal-types').innerHTML  =
-    types.map(t => `<span class="type-badge t-${t}">${capitalize(t)}</span>`).join('');
+    types.map(t => `<span class="type-badge t-${t}">${typeName(t)}</span>`).join('');
 
   // Abilities
   document.getElementById('modal-abilities').innerHTML = (d.abilities || [])
-    .map(ab => `<span class="ability-pill${ab.is_hidden ? ' hidden' : ''}"${ab.is_hidden ? ' title="Habilidad oculta"' : ''}>${abilityNames.get(ab.name) || formatName(ab.name)}</span>`)
+    .map(ab => `<span class="ability-pill${ab.is_hidden ? ' hidden' : ''}"${ab.is_hidden ? ' title="Habilidad oculta"' : ''}>${abilityName(ab.name)}</span>`)
     .join('');
 
   // Stats
@@ -587,6 +612,7 @@ async function loadFormsForModal(d) {
         formsEl.querySelectorAll('.form-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const formData = await getPokemonDetail(btn.dataset.url);
+        currentModalData = formData;
         updateModalContent(formData);
       });
     });
@@ -741,7 +767,7 @@ function renderTable() {
         <img src="${spriteFromId(d.id)}" loading="lazy" alt="" onerror="this.style.display='none'">
         <span>${formatName(d.name)}</span>
       </div></td>
-      <td class="col-type">${types.map(t => `<span class="type-badge t-${t}">${capitalize(t)}</span>`).join(' ')}</td>
+      <td class="col-type">${types.map(t => `<span class="type-badge t-${t}">${typeName(t)}</span>`).join(' ')}</td>
       <td class="col-stat" style="color:${statColor(total / STAT_META.length)}">${total}</td>
       ${STAT_META.map(({ key }) => { const v = sm[key] ?? 0; return `<td class="col-stat" style="color:${statColor(v)}">${v}</td>`; }).join('')}
     `;
@@ -762,6 +788,18 @@ function renderTable() {
     });
   });
 }
+
+document.querySelectorAll('.lang-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    lang = btn.dataset.lang;
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+    updateTypeDropdown();
+    applyFilters();
+    if (currentModalData && modalOverlay.classList.contains('open')) {
+      updateModalContent(currentModalData);
+    }
+  });
+});
 
 btnGrid.addEventListener('click',  () => setView('grid'));
 btnTable.addEventListener('click', () => setView('table'));

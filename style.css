@@ -705,12 +705,18 @@ main {
 .t-unknown  { background: #68a090; }
 .t-shadow   { background: #4e3a78; }
 
-/* ── VIEW TOGGLE ── */
-.view-toggle {
+/* ── TOP-RIGHT UI (banderas + toggle vista) ── */
+.top-right-ui {
   position: fixed;
   top: 18px;
   right: 20px;
   z-index: 200;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.lang-toggle, .view-toggle {
   display: flex;
   background: var(--bg3);
   border: 1px solid var(--border);
@@ -718,6 +724,22 @@ main {
   overflow: hidden;
   box-shadow: 0 4px 16px rgba(0,0,0,.4);
 }
+
+.lang-btn {
+  background: none;
+  border: none;
+  padding: 0 11px;
+  height: 36px;
+  cursor: pointer;
+  font-size: 19px;
+  display: flex;
+  align-items: center;
+  opacity: .45;
+  transition: opacity .15s, background .15s;
+}
+.lang-btn.active  { opacity: 1; background: rgba(255,255,255,.09); }
+.lang-btn:hover:not(.active) { opacity: .75; }
+
 .view-btn {
   background: none;
   border: none;
