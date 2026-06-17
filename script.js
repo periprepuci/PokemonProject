@@ -61,7 +61,7 @@ const GEN_RANGES = {
 };
 
 // ── BACKEND ───────────────────────────────────────────────────
-const BACKEND_URL = 'https://YOUR-APP.railway.app';
+const BACKEND_URL = 'https://pokemonproject-vwu0.onrender.com';
 
 // ── DATA PATHS ────────────────────────────────────────────────
 const DATA = {
