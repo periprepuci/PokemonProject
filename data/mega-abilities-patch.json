@@ -1,0 +1,22 @@
+{
+  "_customNames": {
+    "piercing-drill": { "en": "Piercing Drill",  "es": "Taladro Perforador" },
+    "fire-mane":      { "en": "Fire Mane",        "es": "Melena Ígnea"       },
+    "eelevate":       { "en": "Eelévate",         "es": "Eeléctriza"         }
+  },
+  "staraptor-mega":  [{ "name": "contrary",      "is_hidden": false, "slot": 1 }],
+  "froslass-mega":   [{ "name": "snow-warning",  "is_hidden": false, "slot": 1 }],
+  "emboar-mega":     [{ "name": "mold-breaker",  "is_hidden": false, "slot": 1 }],
+  "excadrill-mega":  [{ "name": "piercing-drill","is_hidden": false, "slot": 1 }],
+  "scolipede-mega":  [{ "name": "shell-armor",   "is_hidden": false, "slot": 1 }],
+  "scrafty-mega":    [{ "name": "intimidate",    "is_hidden": false, "slot": 1 }],
+  "eelektross-mega": [{ "name": "eelevate",      "is_hidden": false, "slot": 1 }],
+  "greninja-mega":   [{ "name": "protean",       "is_hidden": false, "slot": 1 }],
+  "pyroar-mega":     [{ "name": "fire-mane",     "is_hidden": false, "slot": 1 }],
+  "floette-mega":    [{ "name": "fairy-aura",    "is_hidden": false, "slot": 1 }],
+  "meowstic-mega":   [{ "name": "trace",         "is_hidden": false, "slot": 1 }],
+  "malamar-mega":    [{ "name": "contrary",      "is_hidden": false, "slot": 1 }],
+  "barbaracle-mega": [{ "name": "tough-claws",   "is_hidden": false, "slot": 1 }],
+  "dragalge-mega":   [{ "name": "regenerator",   "is_hidden": false, "slot": 1 }],
+  "falinks-mega":    [{ "name": "defiant",       "is_hidden": false, "slot": 1 }]
+}

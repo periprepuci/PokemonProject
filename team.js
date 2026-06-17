@@ -40,10 +40,11 @@ const I18N = {
 };
 
 // ── STATE ────────────────────────────────────────────────────
-let lang         = 'en';
-let allPokemon   = [];
-let detailCache  = new Map();
-let abilityNames = new Map();   // eng slug → Spanish name
+let lang             = 'en';
+let allPokemon       = [];
+let detailCache      = new Map();
+let abilityNames     = new Map();   // eng slug → Spanish name
+let megaAbilityPatch = {};          // pokemon name → abilities array
 let movesList    = [];
 let itemsList    = [];
 let team = Array.from({length: 6}, () => ({ pokemon:null, ability:'', item:'', moves:['','','',''] }));
@@ -76,17 +77,24 @@ function baseId(d) {
 
 // ── INIT ──────────────────────────────────────────────────────
 async function init() {
-  const [listData, detailsData, movesRaw, itemsRaw, abilitiesRaw] = await Promise.all([
+  const [listData, detailsData, movesRaw, itemsRaw, abilitiesRaw, patchRaw] = await Promise.all([
     fetch('./data/pokemon-list.json').then(r => r.json()),
     fetch('./data/pokemon-details.json').then(r => r.json()),
     fetch('./data/moves.json').then(r => r.json()).catch(() => ({})),
     fetch('./data/items.json').then(r => r.json()).catch(() => ({})),
     fetch('./data/abilities.json').then(r => r.json()).catch(() => ({})),
+    fetch('./data/mega-abilities-patch.json').then(r => r.json()).catch(() => ({})),
   ]);
 
   allPokemon = listData;
   for (const [url, d] of Object.entries(detailsData)) detailCache.set(url, d);
   for (const [eng, es] of Object.entries(abilitiesRaw)) abilityNames.set(eng, es);
+
+  // Load mega patch: custom ability names + per-pokemon ability lists
+  const customNames = patchRaw._customNames || {};
+  for (const [slug, names] of Object.entries(customNames)) abilityNames.set(slug, names.es);
+  const { _customNames: _, ...pokemonPatch } = patchRaw;
+  megaAbilityPatch = pokemonPatch;
 
   movesList = Object.entries(movesRaw).map(([slug, n]) => ({ slug, en: n.en||slug, es: n.es||n.en||slug }));
   itemsList = Object.entries(itemsRaw).map(([slug, n]) => ({ slug, en: n.en||slug, es: n.es||n.en||slug }));
@@ -263,8 +271,10 @@ function renderFilled(i) {
   const inputs = document.createElement('div');
   inputs.className = 'slot-inputs';
 
-  // Ability select
-  const abilities = d.abilities || [];
+  // Ability select — fall back to mega patch for Champions megas
+  const abilities = (d.abilities && d.abilities.length)
+    ? d.abilities
+    : (megaAbilityPatch[d.name] || []);
   if (abilities.length) {
     const abilityGroup = document.createElement('div');
     abilityGroup.className = 'input-group';
