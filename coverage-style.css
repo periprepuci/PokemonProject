@@ -1,8 +1,8 @@
 /* ── LAYOUT ── */
-.coverage-main {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px 12px 60px;
+main.coverage-main {
+  max-width: none;
+  margin: 0;
+  padding: 20px 24px 60px;
 }
 
 /* ── TABLE WRAPPER ── */
@@ -38,7 +38,9 @@
   font-weight: 700;
   color: var(--text2);
   text-align: center;
-  min-width: 64px;
+  width: 90px;
+  min-width: 90px;
+  white-space: nowrap;
   border-left: 1px solid var(--border);
   background: rgba(255,255,255,.02);
 }
@@ -149,6 +151,8 @@
   text-align: center;
   font-size: 13px;
   font-weight: 800;
+  width: 90px;
+  min-width: 90px;
   border-top: 1px solid rgba(255,255,255,.04);
   border-left: 1px solid var(--border);
 }
