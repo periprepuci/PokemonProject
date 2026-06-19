@@ -1,18 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Team Builder — Pokédex</title>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="team-style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cobertura Defensiva — Pokédex</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="team-style.css">
+  <link rel="stylesheet" href="coverage-style.css">
 </head>
 <body>
 
 <header>
   <div class="logo" onclick="location.href='index.html'" style="cursor:pointer">
     <div class="pokeball-icon"></div>
-    <h1 id="page-title">Team Builder</h1>
+    <h1 id="page-title">Defensive Coverage</h1>
     <div class="pokeball-icon"></div>
   </div>
   <div class="top-right-ui">
@@ -24,41 +25,31 @@
         <svg viewBox="0 0 60 30" width="26" height="14"><rect width="60" height="30" fill="#012169"/><path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/><path d="M30,0 V30 M0,15 H60" stroke="#fff" stroke-width="10"/><path d="M0,0 L60,30 M60,0 L0,30" stroke="#C8102E" stroke-width="4"/><path d="M30,0 V30 M0,15 H60" stroke="#C8102E" stroke-width="6"/></svg>
       </button>
     </div>
-    <a href="coverage.html" class="back-btn">🛡 Coverage</a>
-    <a href="index.html" id="back-link" class="back-btn">← Pokédex</a>
+    <a href="team.html" class="back-btn" id="team-link">⚔ Team</a>
+    <a href="index.html" class="back-btn" id="back-link">← Pokédex</a>
   </div>
 </header>
 
-<main>
-  <div class="team-grid" id="team-grid"></div>
-  <div class="analyze-section">
-    <button id="btn-analyze" disabled>⚡ Analyze Team</button>
+<main class="coverage-main">
+  <div class="coverage-table-wrap">
+    <table class="coverage-table" id="coverage-table"></table>
   </div>
 </main>
 
-<!-- POKEMON PICKER -->
-<div id="picker-overlay" class="picker-overlay">
+<!-- Picker overlay -->
+<div class="picker-overlay" id="picker-overlay">
   <div class="picker-box">
     <button class="modal-close" id="picker-close">✕</button>
     <div class="picker-search-wrap">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="opacity:.5;flex-shrink:0">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
       </svg>
-      <input type="text" id="picker-search" autocomplete="off" />
+      <input type="text" id="picker-search" placeholder="Search Pokémon…">
     </div>
     <div id="picker-grid" class="picker-grid"></div>
   </div>
 </div>
 
-<!-- ANALYSIS MODAL -->
-<div id="analysis-overlay" class="analysis-overlay-page">
-  <div class="analysis-box-page">
-    <button class="modal-close" id="analysis-close">✕</button>
-    <h3 id="analysis-title">Team Analysis</h3>
-    <div id="analysis-content"></div>
-  </div>
-</div>
-
-<script src="team.js"></script>
+<script src="coverage.js"></script>
 </body>
 </html>

@@ -1,0 +1,181 @@
+/* ── LAYOUT ── */
+.coverage-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 12px 60px;
+}
+
+/* ── TABLE WRAPPER ── */
+.coverage-table-wrap {
+  overflow-x: auto;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+/* ── TABLE ── */
+.coverage-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* ── HEADER: type col + total cols ── */
+.type-col-hdr {
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text2);
+  text-align: left;
+  white-space: nowrap;
+  min-width: 88px;
+  background: rgba(255,255,255,.02);
+  border-right: 1px solid var(--border);
+}
+
+.total-col {
+  padding: 10px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text2);
+  text-align: center;
+  min-width: 64px;
+  border-left: 1px solid var(--border);
+  background: rgba(255,255,255,.02);
+}
+
+/* ── HEADER: Pokémon columns ── */
+.pokemon-col {
+  text-align: center;
+  padding: 8px 6px;
+  border-right: 1px solid rgba(255,255,255,.05);
+  min-width: 74px;
+  max-width: 90px;
+  vertical-align: top;
+}
+
+.pc-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  position: relative;
+}
+
+.pc-inner img {
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+}
+
+.pc-remove {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 18px;
+  height: 18px;
+  background: rgba(255,60,60,.75);
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity .15s;
+  line-height: 1;
+}
+.pokemon-col:hover .pc-remove { opacity: 1; }
+
+.pc-num  { font-size: 9px;  color: var(--text2); }
+.pc-name { font-size: 10px; font-weight: 700; word-break: break-word; line-height: 1.2; }
+.pc-types {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+/* ── ADD COLUMN ── */
+.add-col { vertical-align: middle; }
+.add-poke-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(92,107,192,.12);
+  border: 2px dashed rgba(92,107,192,.4);
+  color: var(--accent);
+  font-size: 22px;
+  font-weight: 300;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.add-poke-btn:hover {
+  background: rgba(92,107,192,.22);
+  border-color: var(--accent);
+}
+
+/* ── BODY: type label cell ── */
+.type-label-td {
+  padding: 5px 10px;
+  border-right: 1px solid var(--border);
+  border-top: 1px solid rgba(255,255,255,.04);
+  white-space: nowrap;
+}
+
+/* ── BODY: effectiveness cells ── */
+.eff-cell {
+  text-align: center;
+  padding: 5px 4px;
+  font-size: 12px;
+  font-weight: 800;
+  border-right: 1px solid rgba(255,255,255,.04);
+  border-top: 1px solid rgba(255,255,255,.04);
+}
+
+.eff-immune  { background: rgba(90,90,130,.28); color: #9898b8; font-size: 9px !important; }
+.eff-quarter { background: rgba(30,160,80,.22);  color: #4eda88; }
+.eff-half    { background: rgba(30,160,80,.12);  color: #3bc86a; }
+.eff-2x      { background: rgba(200,60,60,.18);  color: #ff5566; }
+.eff-4x      { background: rgba(220,20,20,.28);  color: #ff2233; }
+
+/* ── BODY: total cells ── */
+.total-cell {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+  border-top: 1px solid rgba(255,255,255,.04);
+  border-left: 1px solid var(--border);
+}
+
+.weak-num.w1 { background: rgba(180,50,50,.15); color: #c07080; }
+.weak-num.w2 { background: rgba(200,50,50,.24); color: #ff6677; }
+.weak-num.w3 { background: rgba(220,30,30,.36); color: #ff2244; }
+
+.res-num.r1  { background: rgba(30,160,100,.12); color: #40b880; }
+.res-num.r2  { background: rgba(30,180,100,.20); color: #30d070; }
+.res-num.r3  { background: rgba(20,200,100,.30); color: #20e870; }
+
+/* row hover */
+.coverage-table tbody tr:hover .eff-cell,
+.coverage-table tbody tr:hover .type-label-td {
+  background-color: rgba(255,255,255,.025);
+}
+.coverage-table tbody tr:hover .eff-immune  { background: rgba(100,100,150,.38); }
+.coverage-table tbody tr:hover .eff-half    { background: rgba(30,160,80,.20); }
+.coverage-table tbody tr:hover .eff-quarter { background: rgba(30,160,80,.30); }
+.coverage-table tbody tr:hover .eff-2x      { background: rgba(200,60,60,.26); }
+.coverage-table tbody tr:hover .eff-4x      { background: rgba(220,20,20,.36); }
+
+/* ── ADD HINT ── */
+.cov-hint {
+  text-align: center;
+  padding: 48px;
+  color: var(--text2);
+  font-size: 14px;
+}
