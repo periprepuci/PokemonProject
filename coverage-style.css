@@ -46,10 +46,10 @@
 /* ── HEADER: Pokémon columns ── */
 .pokemon-col {
   text-align: center;
-  padding: 8px 6px;
+  padding: 10px 8px;
   border-right: 1px solid rgba(255,255,255,.05);
-  min-width: 74px;
-  max-width: 90px;
+  min-width: 110px;
+  max-width: 130px;
   vertical-align: top;
 }
 
@@ -57,13 +57,13 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 3px;
   position: relative;
 }
 
 .pc-inner img {
-  width: 54px;
-  height: 54px;
+  width: 90px;
+  height: 90px;
   object-fit: contain;
 }
 
@@ -88,8 +88,8 @@
 }
 .pokemon-col:hover .pc-remove { opacity: 1; }
 
-.pc-num  { font-size: 9px;  color: var(--text2); }
-.pc-name { font-size: 10px; font-weight: 700; word-break: break-word; line-height: 1.2; }
+.pc-num  { font-size: 10px; color: var(--text2); }
+.pc-name { font-size: 12px; font-weight: 700; word-break: break-word; line-height: 1.2; }
 .pc-types {
   display: flex;
   gap: 2px;
@@ -171,6 +171,23 @@
 .coverage-table tbody tr:hover .eff-quarter { background: rgba(30,160,80,.30); }
 .coverage-table tbody tr:hover .eff-2x      { background: rgba(200,60,60,.26); }
 .coverage-table tbody tr:hover .eff-4x      { background: rgba(220,20,20,.36); }
+
+/* ── PICKER OVERRIDES (bigger items) ── */
+#picker-grid {
+  grid-template-columns: repeat(auto-fill, 130px);
+}
+
+#picker-grid .picker-item {
+  padding: 12px 8px 10px;
+}
+
+#picker-grid .picker-item img {
+  width: 84px;
+  height: 84px;
+}
+
+#picker-grid .picker-item-name { font-size: 12px; }
+#picker-grid .picker-item-num  { font-size: 10px; }
 
 /* ── ADD HINT ── */
 .cov-hint {
